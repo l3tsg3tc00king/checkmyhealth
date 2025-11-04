@@ -1,26 +1,20 @@
 const diagnosisModel = require('../models/diagnosis.model');
-// const axios = require('axios'); // Sẽ dùng sau
+// const axios = require('axios'); // Sẽ dùng khi team AI sẵn sàng
 
-// --- MOCK FUNCTION ---
-// Giả lập việc gọi API AI (team AI sẽ cung cấp API thật)
-const callAiApiMock = async (imageBuffer) => {
-    // Giả lập độ trễ mạng
+// --- MOCK FUNCTION (API AI) ---
+const callAiApiMock = async (imageUrl) => {
+    // Giả lập độ trễ mạng (AI đang xử lý)
     await new Promise(resolve => setTimeout(resolve, 1500)); 
-
+    
+    console.log(`[Mock AI] Đã nhận ảnh để xử lý: ${imageUrl}`);
+    
     // Giả lập kết quả
     return {
         disease_name: "Bệnh Vẩy Nến (Psoriasis)",
         confidence_score: 0.92,
-        description: "Đây là mô tả giả lập về bệnh vẩy nến.",
+        description: "Đây là mô tả giả lập về bệnh vẩy nến. Ảnh đã được upload thành công.",
         recommendation: "Bạn nên đi khám bác sĩ da liễu."
     };
-};
-
-// --- MOCK FUNCTION ---
-// Giả lập việc upload ảnh lên Cloud (Cloudinary/S3)
-const uploadToCloudMock = async (imageBuffer) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return `https://fake-cloud-storage.com/images/${Date.now()}-image.jpg`;
 };
 // --- END MOCK ---
 
@@ -30,33 +24,31 @@ const diagnosisController = {
      */
     diagnose: async (req, res) => {
         try {
-            // 1. Kiểm tra xem có file không (từ middleware 'upload')
             if (!req.file) {
                 return res.status(400).json({ message: 'Vui lòng upload một file ảnh.' });
             }
 
-            // 2. Lấy user ID từ middleware 'auth'
             const userId = req.user.userId;
+            const imageUrl = req.file.path;
+            const aiResult = await callAiApiMock(imageUrl);
 
-            // 3. (Mock) Upload ảnh lên cloud storage
-            // req.file.buffer là dữ liệu nhị phân của ảnh (từ memoryStorage)
-            const imageUrl = await uploadToCloudMock(req.file.buffer);
+            // Thêm image_url vào kết quả JSON để lưu vào DB
+            const resultToSave = {
+                ...aiResult,
+                image_url: imageUrl // Thêm URL ảnh vào JSON
+            };
 
-            // 4. (Mock) Gửi ảnh (hoặc buffer) tới API AI
-            const aiResult = await callAiApiMock(req.file.buffer);
-
-            // 5. Lưu kết quả vào DB
             await diagnosisModel.create(
                 userId,
-                imageUrl,
+                imageUrl, 
                 aiResult.disease_name,
                 aiResult.confidence_score,
-                aiResult // Lưu toàn bộ kết quả JSON
+                resultToSave // <-- Lưu JSON đầy đủ (có cả URL)
             );
 
-            // 6. Trả kết quả về cho App Flutter
-            res.status(200).json(aiResult);
-
+            // Trả kết quả về cho App Flutter
+            res.status(200).json(resultToSave);
+                
         } catch (error) {
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
@@ -64,12 +56,19 @@ const diagnosisController = {
 
     /**
      * Lấy lịch sử chẩn đoán
+     * (Đây là phần code bị thiếu)
      */
     getHistory: async (req, res) => {
         try {
+            // 1. Lấy user ID từ token
             const userId = req.user.userId;
+            
+            // 2. Gọi model để truy vấn DB
             const history = await diagnosisModel.findByUserId(userId);
+            
+            // 3. Trả về kết quả
             res.status(200).json(history);
+            
         } catch (error) {
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }

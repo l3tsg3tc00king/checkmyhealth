@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const diagnosisController = require('../controllers/diagnosis.controller');
 const { authMiddleware } = require('../middleware/auth.middleware');
-const uploadMiddleware = require('../middleware/upload.middleware');
+const uploadCloud = require('../config/cloudinary');
 
 router.post(
     '/',
     authMiddleware,    // 1. Kiểm tra token
-    uploadMiddleware,  // 2. Xử lý file upload
+    uploadCloud.single('image'),  // 2. Xử lý file upload
     diagnosisController.diagnose // 3. Xử lý logic
 );
 
