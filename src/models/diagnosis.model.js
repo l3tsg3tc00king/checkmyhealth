@@ -31,7 +31,23 @@ const diagnosisModel = {
             console.error('Error fetching history:', error);
             throw error;
         }
+    },
+    
+    /**
+     * Đếm tổng số lượt chẩn đoán
+     */
+    getTotalDiagnoses: async () => {
+        try {
+            const [rows] = await pool.query('SELECT COUNT(*) as total FROM diagnosis_history');
+            return rows[0].total;
+        } catch (error) {
+            console.error('Error counting diagnoses:', error);
+            throw error;
+        }
     }
+
+
+
 };
 
 module.exports = diagnosisModel;

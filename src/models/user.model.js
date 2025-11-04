@@ -97,9 +97,89 @@ const userModel = {
             console.error('Error resetting password:', error);
             throw error;
         }
+    },
+
+    /**
+     * Đếm tổng số người dùng
+     */
+    getTotalUsers: async () => {
+        try {
+            const [rows] = await pool.query('SELECT COUNT(*) as total FROM users');
+            return rows[0].total;
+        } catch (error) {
+            console.error('Error counting users:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * (Admin) Lấy danh sách TẤT CẢ user
+     */
+    getAllUsers: async (searchTerm = '') => {
+        try {
+            let query = 'SELECT user_id, email, full_name, role, provider, account_status, created_at FROM users';
+            const params = [];
+
+            if (searchTerm) {
+                // Tìm kiếm cả tên VÀ email
+                query += ' WHERE full_name LIKE ? OR email LIKE ?';
+                params.push(`%${searchTerm}%`, `%${searchTerm}%`);
+            }
+
+            query += ' ORDER BY created_at DESC'; // Sắp xếp mới nhất lên đầu
+
+            const [rows] = await pool.query(query, params);
+            return rows;
+        } catch (error) {
+            console.error('Error getting all users:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * (Admin) Cập nhật trạng thái (active/suspended)
+     */
+    updateUserStatus: async (userId, status) => {
+        try {
+            await pool.query(
+                'UPDATE users SET account_status = ? WHERE user_id = ?',
+                [status, userId]
+            );
+            return true;
+        } catch (error) {
+            console.error('Error updating user status:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * (Admin) Cập nhật quyền (user/admin)
+     */
+    updateUserRole: async (userId, role) => {
+        try {
+            await pool.query(
+                'UPDATE users SET role = ? WHERE user_id = ?',
+                [role, userId]
+            );
+            return true;
+        } catch (error) {
+            console.error('Error updating user role:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * (Admin) Xóa vĩnh viễn user (Yêu cầu ON DELETE CASCADE)
+     */
+    deleteUserById: async (userId) => {
+        try {
+            await pool.query('DELETE FROM users WHERE user_id = ?', [userId]);
+            return true;
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            throw error;
+        }
     }
-
-
 
 };
 
