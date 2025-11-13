@@ -1,0 +1,10 @@
+{
+  "name": "checkmyhealth-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:be": "cd BE && npm install",
+    "install:fe": "cd FE && npm install",
+    "install:all": "npm run install:be && npm run install:fe"
+  }
+}
