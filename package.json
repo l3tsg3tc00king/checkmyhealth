@@ -6,5 +6,9 @@
     "install:be": "cd BE && npm install",
     "install:fe": "cd FE && npm install",
     "install:all": "npm run install:be && npm run install:fe"
+  },
+  "dependencies": {
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }

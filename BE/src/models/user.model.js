@@ -195,6 +195,22 @@ const userModel = {
             console.error('Error deleting user:', error);
             throw error;
         }
+    },
+
+    /**
+     * (User) Cập nhật avatar
+     */
+    updateAvatar: async (userId, avatarUrl) => {
+        try {
+            await pool.query(
+                'UPDATE users SET avatar_url = ? WHERE user_id = ?',
+                [avatarUrl, userId]
+            );
+            return true;
+        } catch (error) {
+            console.error('Error updating avatar:', error);
+            throw error;
+        }
     }
 
 };

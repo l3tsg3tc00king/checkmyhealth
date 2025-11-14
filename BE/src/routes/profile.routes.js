@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth.middleware');
 const userModel = require('../models/user.model');
-
+const uploadCloud = require('../config/cloudinary');
 /**
  * @swagger
  * /api/profile:
@@ -131,6 +131,31 @@ router.put('/', authMiddleware, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
     }
-});
+},
+router.put('/avatar',authMiddleware,uploadCloud.single('image'),
+    async (req, res) => {       
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: 'Vui lòng upload một file ảnh.' });
+            }
+
+            const imageUrl = req.file.path; // Lấy URL từ Cloudinary
+            const userId = req.user.userId;
+
+            // 4. Lưu URL vào DB (gọi Model)
+            await userModel.updateAvatar(userId, imageUrl);
+
+            // 5. Trả về URL mới cho app
+            res.status(200).json({ 
+                message: 'Cập nhật ảnh đại diện thành công!',
+                avatar_url: imageUrl 
+            });
+
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    }
+));
+
 
 module.exports = router;
