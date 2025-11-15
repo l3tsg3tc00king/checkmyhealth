@@ -17,8 +17,10 @@ export const diagnose = async (imageFile) => {
       throw new Error('Bạn cần đăng nhập để sử dụng tính năng này')
     }
 
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    
     // Gọi API với FormData (không set Content-Type, browser sẽ tự set với boundary)
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/diagnose`, {
+    const response = await fetch(`${apiBaseUrl}/api/diagnose`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -27,26 +29,53 @@ export const diagnose = async (imageFile) => {
       body: formData,
     })
 
+    // Kiểm tra status 401 trước
+    if (response.status === 401) {
+      localStorage.removeItem('token')
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+    }
+
     if (!response.ok) {
-      let errorMessage
-      try {
-        const errorData = await response.json()
-        errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`
-      } catch {
-        errorMessage = await response.text() || `Request failed with status ${response.status}`
-      }
+      let errorMessage = `Lỗi ${response.status}: ${response.statusText}`
       
-      if (response.status === 401) {
-        localStorage.removeItem('token')
-        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+      try {
+        const contentType = response.headers.get('content-type') || ''
+        
+        // Chỉ parse JSON nếu response type là JSON
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } else if (contentType.includes('text/html')) {
+          // Nếu HTML, chỉ lấy status text
+          errorMessage = `Lỗi máy chủ ${response.status}. Vui lòng kiểm tra kết nối.`
+        } else {
+          // Thử đọc text
+          const text = await response.text()
+          if (text) {
+            errorMessage = text.substring(0, 200) // Chỉ lấy 200 ký tự đầu
+          }
+        }
+      } catch (e) {
+        // Nếu không thể đọc response body, giữ nguyên status message
       }
       
       throw new Error(errorMessage)
     }
 
-    return response.json()
+    // Đọc response thành công
+    const result = await response.json()
+    return result
   } catch (error) {
-    throw new Error(error.message || 'Chẩn đoán thất bại')
+    // Log để debug
+    console.error('Diagnosis error:', error)
+    console.error('Error stack:', error.stack)
+    
+    // Nếu là Error object
+    if (error instanceof Error) {
+      throw error
+    }
+    
+    throw new Error(error?.message || error?.toString?.() || 'Chẩn đoán thất bại. Vui lòng thử lại.')
   }
 }
 

@@ -7,6 +7,10 @@ const authRoutes = require('./routes/auth.routes');
 const diagnosisRoutes = require('./routes/diagnosis.routes');
 const profileRoutes = require('./routes/profile.routes');
 const adminRoutes = require('./routes/admin.routes');
+const newsRoutes = require('./routes/news.routes');
+
+// Database initialization
+const { initializeDatabase } = require('./config/init');
 
 // Swagger
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
@@ -58,7 +62,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/diagnose', diagnosisRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/news', newsRoutes);
 
+// Initialize database tables
+initializeDatabase().catch(error => {
+    console.error('Fatal: Database initialization failed:', error);
+    process.exit(1);
+});
 
 // --- Xuất app ra ---
 module.exports = app;

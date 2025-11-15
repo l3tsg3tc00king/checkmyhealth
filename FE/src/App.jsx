@@ -9,7 +9,8 @@ import ProfilePage from './pages/ProfilePage.jsx'
 import DiagnosisPage from './pages/DiagnosisPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
-import AdminProducts from './pages/AdminProducts.jsx'
+import AdminNews from './pages/AdminNews.jsx'
+import NewsPage from './pages/NewsPage.jsx'
 import AdminUsers from './pages/AdminUsers.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import NotFound from './pages/NotFound.jsx'
@@ -30,6 +31,7 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route path="/news" element={<NewsPage />} />
         <Route 
           path="/history" 
           element={
@@ -56,7 +58,7 @@ function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="products" element={<AdminProducts />} />
+        <Route path="news" element={<AdminNews />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
       </Route>

@@ -1,41 +1,69 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { diagnose } from '../services/diagnosisService.js'
 import './Diagnosis.css'
 
 const DiagnosisPage = () => {
+  const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [selectedFile, setSelectedFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [dragActive, setDragActive] = useState(false)
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Vui lòng chọn file ảnh')
-        return
-      }
-      
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Kích thước file không được vượt quá 10MB')
-        return
-      }
+      processFile(file)
+    }
+  }
 
-      setSelectedFile(file)
-      setError('')
-      setResult(null)
+  const processFile = (file) => {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Vui lòng chọn file ảnh (JPG, PNG, GIF, v.v.)')
+      return
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Kích thước file không được vượt quá 10MB')
+      return
+    }
 
-      // Create preview
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreview(reader.result)
-      }
-      reader.readAsDataURL(file)
+    setSelectedFile(file)
+    setError('')
+    setResult(null)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrag = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    const files = e.dataTransfer.files
+    if (files && files[0]) {
+      processFile(files[0])
     }
   }
 
@@ -52,10 +80,14 @@ const DiagnosisPage = () => {
     setResult(null)
 
     try {
+      console.log('Starting diagnosis with file:', selectedFile.name, selectedFile.type, selectedFile.size)
       const diagnosisResult = await diagnose(selectedFile)
+      console.log('Diagnosis result:', diagnosisResult)
       setResult(diagnosisResult)
     } catch (err) {
-      setError(err.message || 'Chẩn đoán thất bại. Vui lòng thử lại.')
+      const errorMsg = err?.message || err?.toString?.() || 'Chẩn đoán thất bại. Vui lòng thử lại.'
+      console.error('Diagnosis failed:', errorMsg)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -66,6 +98,10 @@ const DiagnosisPage = () => {
     setPreview(null)
     setResult(null)
     setError('')
+  }
+
+  const handleViewHistory = () => {
+    navigate('/history')
   }
 
   if (!isAuthenticated) {
@@ -95,7 +131,13 @@ const DiagnosisPage = () => {
 
         {!result ? (
           <form onSubmit={handleSubmit} className="diagnosis-form">
-            <div className="diagnosis-upload-area">
+            <div 
+              className={`diagnosis-upload-area ${dragActive ? 'diagnosis-upload-area--active' : ''}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
               {preview ? (
                 <div className="diagnosis-preview">
                   <img src={preview} alt="Preview" />
@@ -134,7 +176,14 @@ const DiagnosisPage = () => {
               className="diagnosis-submit-btn"
               disabled={!selectedFile || loading}
             >
-              {loading ? 'Đang chẩn đoán...' : 'Bắt đầu chẩn đoán'}
+              {loading ? (
+                <>
+                  <span className="diagnosis-spinner"></span>
+                  Đang chẩn đoán...
+                </>
+              ) : (
+                'Bắt đầu chẩn đoán'
+              )}
             </button>
           </form>
         ) : (
@@ -148,19 +197,24 @@ const DiagnosisPage = () => {
             )}
 
             <div className="diagnosis-result-content">
-              <div className="diagnosis-result-item">
-                <span className="diagnosis-result-label">Bệnh:</span>
-                <span className="diagnosis-result-value">{result.disease_name || 'Không xác định'}</span>
-              </div>
+            {result.disease_name && (
+                <div className="diagnosis-result-item diagnosis-result-item--disease">
+                  <span className="diagnosis-result-label">Bệnh:</span>
+                  <span className="diagnosis-result-value">{result.disease_name}</span>
+                </div>
+              )}
 
-              <div className="diagnosis-result-item">
-                <span className="diagnosis-result-label">Độ tin cậy:</span>
-                <span className="diagnosis-result-value">
-                  {result.confidence_score 
-                    ? `${(result.confidence_score * 100).toFixed(1)}%`
-                    : 'N/A'}
-                </span>
-              </div>
+              {result.confidence_score !== undefined && (
+                <div className="diagnosis-result-item diagnosis-result-item--confidence">
+                  <span className="diagnosis-result-label">Độ tin cậy:</span>
+                  <div className="diagnosis-confidence-bar">
+                    <div className="diagnosis-confidence-fill" style={{width: `${result.confidence_score * 100}%`}}></div>
+                    <span className="diagnosis-result-value">
+                      {(result.confidence_score * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {result.description && (
                 <div className="diagnosis-result-description">
@@ -176,12 +230,20 @@ const DiagnosisPage = () => {
                 </div>
               )}
 
-              <button 
-                onClick={handleReset}
-                className="diagnosis-new-btn"
-              >
-                Chẩn đoán ảnh khác
-              </button>
+              <div className="diagnosis-result-actions">
+                <button 
+                  onClick={handleReset}
+                  className="diagnosis-new-btn"
+                >
+                  Chẩn đoán ảnh khác
+                </button>
+                <button 
+                  onClick={handleViewHistory}
+                  className="diagnosis-history-btn"
+                >
+                  Xem lịch sử
+                </button>
+              </div>
             </div>
           </div>
         )}

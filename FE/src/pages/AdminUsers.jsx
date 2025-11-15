@@ -4,6 +4,7 @@ import { formatDateAndTime } from '../utils/format.js'
 import SortableTableHeader from '../components/SortableTableHeader.jsx'
 import Pagination from '../components/Pagination.jsx'
 import AddUserModal from '../components/AddUserModal.jsx'
+import UserHistoryModal from '../components/UserHistoryModal.jsx'
 import './AdminUsers.css'
 
 const AdminUsers = () => {
@@ -15,6 +16,7 @@ const AdminUsers = () => {
   const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addUserLoading, setAddUserLoading] = useState(false)
+  const [historyModal, setHistoryModal] = useState({ isOpen: false, userId: null, userName: '' })
 
   // Fetch data
   useEffect(() => {
@@ -102,6 +104,14 @@ const AdminUsers = () => {
     setSearchTerm(e.target.value)
   }
 
+  const handleViewHistory = (userId, userName) => {
+    setHistoryModal({ isOpen: true, userId, userName })
+  }
+
+  const handleCloseHistory = () => {
+    setHistoryModal({ isOpen: false, userId: null, userName: '' })
+  }
+
   return (
     <section className="admin-page">
       <header className="admin-page__header">
@@ -180,12 +190,13 @@ const AdminUsers = () => {
                   >
                     Ngày tạo
                   </SortableTableHeader>
+                  <th style={{ width: '100px', textAlign: 'center' }}>Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="data-table__empty">
+                    <td colSpan={7} className="data-table__empty">
                       {searchTerm ? 'Không tìm thấy người dùng nào.' : 'Chưa có người dùng nào.'}
                     </td>
                   </tr>
@@ -202,6 +213,15 @@ const AdminUsers = () => {
                         </span>
                       </td>
                       <td>{formatDateAndTime(user.created_at)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          className="btn-action"
+                          onClick={() => handleViewHistory(user.user_id, user.full_name || user.email)}
+                          title="Xem lịch sử chẩn đoán"
+                        >
+                          📋 Xem
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -229,6 +249,13 @@ const AdminUsers = () => {
         onClose={() => setShowAddModal(false)}
         onSubmit={handleAddUser}
         loading={addUserLoading}
+      />
+
+      <UserHistoryModal
+        isOpen={historyModal.isOpen}
+        onClose={handleCloseHistory}
+        userId={historyModal.userId}
+        userName={historyModal.userName}
       />
     </section>
   )

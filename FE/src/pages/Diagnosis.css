@@ -39,11 +39,18 @@
   text-align: center;
   transition: all 0.2s;
   background: #f7fafc;
+  cursor: pointer;
 }
 
 .diagnosis-upload-area:hover {
   border-color: #667eea;
   background: #edf2f7;
+}
+
+.diagnosis-upload-area--active {
+  border-color: #667eea;
+  background: #edf2f7;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
 .diagnosis-upload-label {
@@ -112,6 +119,10 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .diagnosis-submit-btn:hover:not(:disabled) {
@@ -122,6 +133,22 @@
 .diagnosis-submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.diagnosis-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .diagnosis-error {
@@ -170,6 +197,18 @@
   padding: 1rem;
   background: #f7fafc;
   border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.diagnosis-result-item--disease {
+  border-left-color: #667eea;
+}
+
+.diagnosis-result-item--confidence {
+  border-left-color: #48bb78;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .diagnosis-result-label {
@@ -181,6 +220,27 @@
   font-weight: 700;
   color: #1a202c;
   font-size: 1.1rem;
+}
+
+.diagnosis-confidence-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.diagnosis-confidence-fill {
+  flex: 1;
+  height: 8px;
+  background: linear-gradient(90deg, #f56565, #fbd38d, #48bb78);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.diagnosis-confidence-bar .diagnosis-result-value {
+  min-width: 60px;
+  text-align: right;
+  font-size: 1rem;
 }
 
 .diagnosis-result-description,
@@ -215,12 +275,36 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  margin-top: 1rem;
+  flex: 1;
 }
 
 .diagnosis-new-btn:hover {
   background: #cbd5e0;
   transform: translateY(-1px);
+}
+
+.diagnosis-history-btn {
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.diagnosis-history-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.diagnosis-result-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 @media (max-width: 640px) {

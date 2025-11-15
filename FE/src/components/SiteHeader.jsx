@@ -34,6 +34,9 @@ const SiteHeader = ({ variant = 'site' }) => {
           <NavLink to="/" className={buildLinkClass}>
             Trang chủ
           </NavLink>
+          <NavLink to="/news" className={buildLinkClass}>
+            Tin tức
+          </NavLink>
           {isAuthenticated && (
             <>
               <NavLink to="/diagnosis" className={buildLinkClass}>

@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Tổng quan', end: true },
-  { to: '/admin/products', label: 'Sản phẩm' },
+  { to: '/admin/news', label: 'Tin tức' },
   { to: '/admin/users', label: 'Người dùng' },
   { to: '/admin/reports', label: 'Báo cáo' },
 ]
