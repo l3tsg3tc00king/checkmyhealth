@@ -87,6 +87,26 @@ CREATE TABLE IF NOT EXISTS news_sources (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE users
+ADD COLUMN avatar_url VARCHAR(512) NULL DEFAULT NULL
+AFTER full_name;
+
+CREATE TABLE IF NOT EXISTS feedback (
+    feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+    -- Khóa ngoại liên kết tới người dùng đã gửi
+    user_id INT NULL, -- Cho phép NULL
+    -- Loại phản hồi (ví dụ: 'bug', 'suggestion', 'other')
+    feedback_type VARCHAR(50) NOT NULL DEFAULT 'other',
+    -- Nội dung phản hồi
+    content TEXT NOT NULL,
+    -- Ngày giờ gửi
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Liên kết với bảng users
+    -- ON DELETE SET NULL: Nếu user bị xóa (bởi Admin),
+    -- chúng ta vẫn giữ feedback (dưới dạng vô danh)
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
 -- Các lệnh bạn dùng để kiểm tra
 select * from users;
 select * from diagnosis_history;
