@@ -131,9 +131,10 @@ router.put('/', authMiddleware, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
     }
-},
-router.put('/avatar',authMiddleware,uploadCloud.single('image'),
-    async (req, res) => {       
+});
+
+router.put('/avatar', authMiddleware, uploadCloud.single('image'),
+    async (req, res) => {
         try {
             if (!req.file) {
                 return res.status(400).json({ message: 'Vui lòng upload một file ảnh.' });
@@ -146,16 +147,16 @@ router.put('/avatar',authMiddleware,uploadCloud.single('image'),
             await userModel.updateAvatar(userId, imageUrl);
 
             // 5. Trả về URL mới cho app
-            res.status(200).json({ 
+            res.status(200).json({
                 message: 'Cập nhật ảnh đại diện thành công!',
-                avatar_url: imageUrl 
+                avatar_url: imageUrl
             });
 
         } catch (error) {
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }
-));
+);
 
 
 module.exports = router;

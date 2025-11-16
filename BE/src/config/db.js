@@ -12,28 +12,37 @@ const waitForConnections = dbUrl.searchParams.get('waitForConnections') === 'tru
 const connectionLimit = parseInt(dbUrl.searchParams.get('connectionLimit'), 10) || 10;
 const queueLimit = parseInt(dbUrl.searchParams.get('queueLimit'), 10) || 0;
 
-// 3. Tạo Pool bằng một Object (Đối tượng)
-const pool = mysql.createPool({
-    // Lấy thông tin từ chuỗi đã phân tích
+// ----------------------------------------------------
+// BẮT ĐẦU SỬA LỖI (CHỈ THÊM SSL KHI LÊN PRODUCTION)
+// ----------------------------------------------------
+
+// 3. Kiểm tra xem có đang kết nối local không
+const isLocal = dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1';
+
+// 4. Tạo cấu hình pool cơ bản
+const poolConfig = {
     host: dbUrl.hostname,
     user: dbUrl.username,
     password: dbUrl.password,
     database: dbUrl.pathname.substring(1), // Bỏ dấu '/' ở đầu
     port: dbUrl.port,
-    
-    // Lấy tùy chọn pool đã phân tích
     waitForConnections: waitForConnections,
     connectionLimit: connectionLimit,
-    queueLimit: queueLimit,
+    queueLimit: queueLimit
+};
 
-    // 4. (ĐÂY LÀ PHẦN SỬA LỖI)
-    // Thêm cấu hình SSL mà TiDB Cloud yêu cầu
-    ssl: {
+// 5. Chỉ thêm SSL nếu KHÔNG phải là local (tức là khi deploy lên Render)
+if (!isLocal) {
+    poolConfig.ssl = {
         rejectUnauthorized: true
-        // TiDB dùng CA (Certificate Authority) công cộng,
-        // nên chúng ta chỉ cần bật SSL là nó tự động tin cậy.
-    }
-});
+    };
+}
+
+// 6. Tạo Pool với cấu hình đã hoàn thiện
+const pool = mysql.createPool(poolConfig);
+// ----------------------------------------------------
+// KẾT THÚC SỬA LỖI
+// ----------------------------------------------------
 
 // Hàm kiểm tra kết nối (giữ nguyên)
 const testConnection = async () => {

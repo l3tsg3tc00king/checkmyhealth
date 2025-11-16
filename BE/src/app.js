@@ -18,46 +18,13 @@ const { swaggerUi, swaggerSpec } = require('./config/swagger');
 const app = express();
 
 // --- Middlewares ---
-
-// -----------------------------------------------------------------
-// BẮT ĐẦU PHẦN CẬP NHẬT CORS
-// -----------------------------------------------------------------
-// Cấu hình CORS để chấp nhận URL chính, localhost, và tất cả các URL preview của Vercel
-const allowedOrigins = [
-    process.env.FRONTEND_URL, // URL chính (ví dụ: https://checkmyhealthskindetect.vercel.app)
-    'http://localhost:5173',    // Cho phép dev ở local (sửa port nếu cần)
-    'http://localhost:3000'     // Thêm các port dev khác nếu có
-];
-
-const corsOptions = {
-    origin: function (origin, callback) {
-        // 1. Cho phép nếu origin nằm trong "danh sách trắng" (allowedOrigins)
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        }
-        // 2. Cho phép nếu origin là một URL "preview" của Vercel
-        else if (origin && origin.endsWith('.vercel.app')) {
-            callback(null, true);
-        }
-        // 3. Cho phép các request không có origin (ví dụ: Postman, Mobile Apps)
-        else if (!origin) {
-            callback(null, true);
-        }
-        // 4. Chặn tất cả các trường hợp khác
-        else {
-            callback(new Error('CORS Error: This origin is not allowed.'));
-        }
-    },
+// CORS configuration - cho phép frontend gọi API
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Vite default port
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-app.use(cors(corsOptions)); // <-- SỬ DỤNG CẤU HÌNH MỚI
-// -----------------------------------------------------------------
-// KẾT THÚC PHẦN CẬP NHẬT CORS
-// -----------------------------------------------------------------
-
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -66,20 +33,20 @@ app.use(express.urlencoded({ extended: true }));
 /**
  * @swagger
  * /:
- * get:
- * summary: Welcome endpoint
- * tags: [General]
- * responses:
- * 200:
- * description: Welcome message
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * message:
- * type: string
- * example: Welcome to Skin Disease Diagnosis API!
+ *   get:
+ *     summary: Welcome endpoint
+ *     tags: [General]
+ *     responses:
+ *       200:
+ *         description: Welcome message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Welcome to Skin Disease Diagnosis API!
  */
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Skin Disease Diagnosis API!' });
