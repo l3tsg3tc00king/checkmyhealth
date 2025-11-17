@@ -15,6 +15,7 @@ import AdminUsers from './pages/AdminUsers.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import AdminReports from './pages/AdminReports.jsx'
 import NotFound from './pages/NotFound.jsx'
+import ChatPage from './pages/ChatPage.jsx'
 import './App.css'
 
 function App() {
@@ -48,6 +49,14 @@ function App() {
               <ProfilePage />
             </ProtectedRoute>
           } 
+        />
+        <Route 
+          path="/chat" 
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
         />
       </Route>
       <Route 

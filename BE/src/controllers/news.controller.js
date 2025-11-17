@@ -2,6 +2,44 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const newsModel = require('../models/news.model');
 
+// Cache danh sách host cho phép scrape để tránh query DB liên tục
+const HOST_CACHE_TTL = 5 * 60 * 1000; // 5 phút
+let cachedHosts = null;
+let cachedHostsLoadedAt = 0;
+
+const parseHost = (rawUrl) => {
+  try {
+    return new URL(rawUrl).hostname;
+  } catch {
+    return null;
+  }
+};
+
+const getAllowedHosts = async () => {
+  const now = Date.now();
+  if (cachedHosts && now - cachedHostsLoadedAt < HOST_CACHE_TTL) {
+    return cachedHosts;
+  }
+
+  const sources = await newsModel.getAllSources();
+  const hostsFromDb = sources
+    .map(source => parseHost(source.url))
+    .filter(Boolean);
+
+  if (hostsFromDb.length > 0) {
+    cachedHosts = hostsFromDb;
+  } else {
+    // Fallback sang biến môi trường (hoặc giá trị mặc định) nếu chưa có nguồn tin nào
+    cachedHosts = (process.env.NEWS_SCRAPE_ALLOWLIST || 'vnexpress.net,thanhnien.vn,tuoitre.vn')
+      .split(',')
+      .map(h => h.trim())
+      .filter(Boolean);
+  }
+
+  cachedHostsLoadedAt = now;
+  return cachedHosts;
+};
+
 const newsController = {
   /**
    * Lấy tất cả các nguồn tin từ database
@@ -106,12 +144,22 @@ const newsController = {
         return res.status(400).json({ message: 'Invalid URL format' });
       }
 
-      // Fetch page
+      // Allowlist dựa trên DB (fallback sang biến môi trường)
+      const allowedHosts = await getAllowedHosts();
+      const hostAllowed = allowedHosts.some(allowed =>
+        parsedUrl.hostname === allowed || parsedUrl.hostname.endsWith(`.${allowed}`)
+      );
+
+      if (!hostAllowed) {
+        return res.status(400).json({ message: 'Host không được phép scrape.' });
+      }
+
+      // Fetch page (giảm timeout để tránh giữ kết nối lâu)
       const response = await axios.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
-        timeout: 10000
+        timeout: 8000
       });
 
       const $ = cheerio.load(response.data);

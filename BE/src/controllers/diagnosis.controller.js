@@ -72,13 +72,17 @@ const diagnosisController = {
         try {
             // 1. Lấy user ID từ token
             const userId = req.user.userId;
-            
+
+            // Cho phép client truyền ?limit=, mặc định 100, tối đa 500
+            const limitParam = parseInt(req.query.limit, 10);
+            const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 100;
+
             // 2. Gọi model để truy vấn DB
-            const history = await diagnosisModel.findByUserId(userId);
-            
+            const history = await diagnosisModel.findByUserId(userId, limit);
+
             // 3. Trả về kết quả
             res.status(200).json(history);
-            
+
         } catch (error) {
             console.error('Lỗi trong hàm getHistory:', error); // Log lỗi chi tiết
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });

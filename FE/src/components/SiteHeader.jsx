@@ -8,6 +8,7 @@ const SiteHeader = ({ variant = 'site' }) => {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isNavOpen, setIsNavOpen] = useState(false)
 
   const buildLinkClass = ({ isActive }) =>
     `site-nav__link${isActive ? ' active' : ''}`
@@ -23,13 +24,29 @@ const SiteHeader = ({ variant = 'site' }) => {
     navigate('/', { replace: true })
   }
 
+  const handleToggleMenu = () => {
+    setIsNavOpen((prev) => !prev)
+  }
+
   return (
-    <header className={`site-header ${variant === 'admin' ? 'site-header--admin' : ''}`}>
+    <header className={`site-header ${variant === 'admin' ? 'site-header--admin' : ''} ${isNavOpen ? 'site-header--mobile-open' : ''}`}>
       <div className="site-header__inner">
         <Link to="/" className="site-header__brand">
           <span className="site-header__logo">CheckMyHealth</span>
           <span className="site-header__tagline">{tagline}</span>
         </Link>
+
+        <button
+          type="button"
+          className="site-header__menu-toggle"
+          onClick={handleToggleMenu}
+          aria-label="Toggle navigation"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
         <nav className="site-nav">
           <NavLink to="/" className={buildLinkClass}>
             Trang chủ

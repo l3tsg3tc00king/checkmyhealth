@@ -5,8 +5,9 @@ const { pool } = require('./db');
  * Được gọi tự động khi backend start
  */
 const initializeDatabase = async () => {
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
 
     // Tạo bảng news_sources
     await connection.query(`
@@ -19,10 +20,13 @@ const initializeDatabase = async () => {
     `);
 
     console.log('✅ news_sources table checked/created');
-    connection.release();
   } catch (error) {
     console.error('❌ Error initializing database:', error.message);
     throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 

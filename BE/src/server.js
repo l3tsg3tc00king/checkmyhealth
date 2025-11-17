@@ -2,7 +2,7 @@ const app = require('./app');
 const { testConnection } = require('./config/db');
 
 // Lấy PORT từ file .env, nếu không có thì mặc định là 3000
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 // Hàm khởi động server
 const startServer = async () => {

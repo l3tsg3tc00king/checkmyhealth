@@ -39,3 +39,28 @@ export const updateProfile = async (profileData) => {
   }
 }
 
+/**
+ * Cập nhật avatar người dùng (upload ảnh)
+ * @param {File} file - ảnh đại diện mới
+ * @returns {Promise<Object>} Kết quả cập nhật (chứa avatar_url)
+ */
+export const updateAvatar = async (file) => {
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+
+    const response = await apiClient('/api/profile/avatar', {
+      method: 'PUT',
+      body: formData,
+      // Để apiClient tự bỏ qua Content-Type JSON khi body là FormData
+    })
+
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('hết hạn')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể cập nhật ảnh đại diện')
+  }
+}
+

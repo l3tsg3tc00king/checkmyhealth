@@ -19,12 +19,15 @@ const diagnosisModel = {
 
     /**
      * Lấy lịch sử chẩn đoán của một user
+     * @param {number} userId
+     * @param {number} limit - số bản ghi tối đa, mặc định 100
      */
-    findByUserId: async (userId) => {
+    findByUserId: async (userId, limit = 100) => {
         try {
+            const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 500) : 100;
             const [rows] = await pool.query(
-                'SELECT * FROM diagnosis_history WHERE user_id = ? ORDER BY diagnosed_at DESC',
-                [userId]
+                'SELECT * FROM diagnosis_history WHERE user_id = ? ORDER BY diagnosed_at DESC LIMIT ?',
+                [userId, safeLimit]
             );
             return rows;
         } catch (error) {

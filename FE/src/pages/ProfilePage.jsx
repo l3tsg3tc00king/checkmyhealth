@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { updateProfile } from '../services/profileService.js'
+import { updateProfile, updateAvatar } from '../services/profileService.js'
 import './Profile.css'
 
 const ProfilePage = () => {
@@ -12,6 +12,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -48,6 +49,31 @@ const ProfilePage = () => {
     }
   }
 
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setError('')
+    setSuccess('')
+    setAvatarUploading(true)
+
+    try {
+      const result = await updateAvatar(file)
+      if (result?.avatar_url) {
+        updateUser({ avatar_url: result.avatar_url })
+        setSuccess('Cập nhật ảnh đại diện thành công!')
+      } else {
+        setSuccess('Đã cập nhật ảnh đại diện.')
+      }
+    } catch (err) {
+      setError(err.message || 'Không thể cập nhật ảnh đại diện')
+    } finally {
+      setAvatarUploading(false)
+      // reset input để có thể chọn lại cùng một file nếu cần
+      e.target.value = ''
+    }
+  }
+
   if (!user) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -60,6 +86,25 @@ const ProfilePage = () => {
     <div className="profile-container">
       <div className="profile-card">
         <h1 className="profile-title">Hồ sơ của tôi</h1>
+
+        <div className="profile-avatar-section">
+          <div className="profile-avatar-wrapper">
+            <img
+              src={user.avatar_url || 'https://via.placeholder.com/120?text=Avatar'}
+              alt="Avatar"
+              className="profile-avatar-image"
+            />
+          </div>
+          <label className="profile-avatar-upload">
+            <span>{avatarUploading ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện'}</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              disabled={avatarUploading}
+            />
+          </label>
+        </div>
 
         {error && (
           <div className="profile-error">

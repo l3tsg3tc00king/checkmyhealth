@@ -46,7 +46,14 @@ const adminController = {
                 [days]
             )
 
-            // Build full series of days (fill zeros)
+            // Đưa rows về dạng Map để tránh O(n^2) khi fill chuỗi thời gian
+            const valueByDay = new Map()
+            rows.forEach(r => {
+                const key = String(r.day)
+                valueByDay.set(key, Number(r.value) || 0)
+            })
+
+            // Build full series of days (fill zeros) với tra cứu O(1)
             const result = []
             const now = new Date()
             // start from days-1 days ago to today
@@ -57,8 +64,8 @@ const adminController = {
                 const mm = String(d.getMonth() + 1).padStart(2, '0')
                 const dd = String(d.getDate()).padStart(2, '0')
                 const dayStr = `${yyyy}-${mm}-${dd}`
-                const found = rows.find(r => String(r.day) === dayStr)
-                result.push({ day: dayStr, value: found ? Number(found.value) : 0 })
+                const value = valueByDay.get(dayStr) ?? 0
+                result.push({ day: dayStr, value })
             }
 
             res.status(200).json({ metric, period: days, series: result })
@@ -168,8 +175,13 @@ const adminController = {
     getUserList: async (req, res) => {
         try {
             // Lấy tham số ?search=... từ URL
-            const { search } = req.query; 
-            const users = await userModel.getAllUsers(search);
+            const { search } = req.query;
+            // Cho phép client truyền phân trang: ?page=&pageSize=
+            const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+            const pageSizeRaw = parseInt(req.query.pageSize, 10) || 100;
+            const pageSize = Math.min(Math.max(pageSizeRaw, 1), 500);
+
+            const users = await userModel.getAllUsers(search, page, pageSize);
             res.status(200).json(users);
         } catch (error) {
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });

@@ -129,23 +129,42 @@ const userModel = {
     },
 
     /**
-     * (Admin) Lấy danh sách TẤT CẢ user
+     * (Admin) Lấy danh sách user có phân trang đơn giản
+     * @param {string} searchTerm
+     * @param {number} page - trang hiện tại (bắt đầu từ 1)
+     * @param {number} pageSize - số bản ghi mỗi trang
      */
-    getAllUsers: async (searchTerm = '') => {
+    getAllUsers: async (searchTerm = '', page = 1, pageSize = 100) => {
         try {
-            let query = 'SELECT user_id, email, full_name, role, provider, account_status, created_at FROM users';
+            const safePage = Math.max(parseInt(page, 10) || 1, 1);
+            const safePageSize = Math.min(Math.max(parseInt(pageSize, 10) || 100, 1), 500);
+            const offset = (safePage - 1) * safePageSize;
+
+            let baseQuery = 'FROM users';
             const params = [];
 
             if (searchTerm) {
                 // Tìm kiếm cả tên VÀ email
-                query += ' WHERE full_name LIKE ? OR email LIKE ?';
+                baseQuery += ' WHERE full_name LIKE ? OR email LIKE ?';
                 params.push(`%${searchTerm}%`, `%${searchTerm}%`);
             }
 
-            query += ' ORDER BY user_id ASC'; // Sắp xếp mặc định theo ID
+            // Lấy tổng số trước (phục vụ paging nếu cần)
+            const [countRows] = await pool.query(`SELECT COUNT(*) as total ${baseQuery}`, params);
+            const total = countRows[0]?.total ?? 0;
 
-            const [rows] = await pool.query(query, params);
-            return rows;
+            // Lấy dữ liệu trang hiện tại
+            const [rows] = await pool.query(
+                `SELECT user_id, email, full_name, role, provider, account_status, created_at ${baseQuery} ORDER BY user_id ASC LIMIT ? OFFSET ?`,
+                [...params, safePageSize, offset]
+            );
+
+            return {
+                items: rows,
+                total,
+                page: safePage,
+                pageSize: safePageSize
+            };
         } catch (error) {
             console.error('Error getting all users:', error);
             throw error;

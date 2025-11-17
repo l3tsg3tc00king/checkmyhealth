@@ -62,7 +62,8 @@ router.get('/', authMiddleware, async (req, res) => {
             email: user.email,
             fullName: user.full_name,
             provider: user.provider, // Rất quan trọng (local, google...)
-            role: user.role // Thêm role vào response
+            role: user.role, // Thêm role vào response
+            avatar_url: user.avatar_url || null
         });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
@@ -133,14 +134,33 @@ router.put('/', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/avatar', authMiddleware, uploadCloud.single('image'),
+router.put(
+    '/avatar',
+    authMiddleware,
+    (req, res, next) => {
+        uploadCloud.single('image')(req, res, (err) => {
+            if (err) {
+                console.error('Upload avatar error:', err);
+                return res.status(400).json({
+                    message: 'Lỗi upload ảnh. Vui lòng thử lại với file khác.',
+                    error: err.message || String(err)
+                });
+            }
+            next();
+        });
+    },
     async (req, res) => {
         try {
             if (!req.file) {
                 return res.status(400).json({ message: 'Vui lòng upload một file ảnh.' });
             }
 
-            const imageUrl = req.file.path; // Lấy URL từ Cloudinary
+            const imageUrl = req.file.path || req.file.secure_url || req.file.url;
+            if (!imageUrl) {
+                console.error('Không nhận được URL ảnh từ Cloudinary response:', req.file);
+                return res.status(500).json({ message: 'Không nhận được URL ảnh từ dịch vụ lưu trữ.' });
+            }
+
             const userId = req.user.userId;
 
             // 4. Lưu URL vào DB (gọi Model)
@@ -153,6 +173,7 @@ router.put('/avatar', authMiddleware, uploadCloud.single('image'),
             });
 
         } catch (error) {
+            console.error('Error updating avatar:', error);
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }

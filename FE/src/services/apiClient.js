@@ -21,10 +21,12 @@ export const apiClient = async (path, options = {}) => {
 
   // Lấy token nếu có
   const token = getToken()
-  
+
+  const isFormData = options.body instanceof FormData
+
   // Xây dựng headers
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers ?? {}),
   }
 
@@ -46,15 +48,23 @@ export const apiClient = async (path, options = {}) => {
         localStorage.removeItem('token')
         // Có thể redirect đến trang login ở đây nếu cần
       }
-      
+
       let errorMessage
       try {
-        const errorData = await response.json()
+        const cloned = response.clone()
+        const errorData = await cloned.json()
         errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`
       } catch {
-        errorMessage = await response.text() || `Request failed with status ${response.status}`
+        try {
+          errorMessage = await response.text()
+        } catch {
+          errorMessage = ''
+        }
+        if (!errorMessage) {
+          errorMessage = `Request failed with status ${response.status}`
+        }
       }
-      
+
       throw new Error(errorMessage)
     }
 

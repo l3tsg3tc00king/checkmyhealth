@@ -44,8 +44,8 @@ const chatController = {
             const model = genAI.getGenerativeModel({ model: "gemini-pro-latest" });
             // ===============================================
             
-            // Tải Lịch sử Chat Cũ
-            const dbHistory = await chatModel.getHistory(userId);
+            // Tải Lịch sử Chat Cũ (giới hạn số lượt gần nhất để giảm tải)
+            const dbHistory = await chatModel.getHistory(userId, 50);
             const geminiHistory = dbHistory.map(entry => ({
                 role: entry.role,
                 parts: [{ text: entry.content }]
