@@ -11,6 +11,7 @@ const newsRoutes = require('./routes/news.routes');
 const chatRoutes = require('./routes/chat.routes.js');
 const feedbackRoutes = require('./routes/feedback.routes.js')
 const notificationRoutes = require('./routes/notification.routes');
+const diseaseRoutes = require('./routes/disease.routes');
 
 // Database initialization
 const { initializeDatabase } = require('./config/init');
@@ -69,6 +70,7 @@ app.use('/api/news', newsRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/diseases', diseaseRoutes);
 
 // Initialize database tables
 initializeDatabase().catch(error => {
