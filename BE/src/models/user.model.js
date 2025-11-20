@@ -28,7 +28,7 @@ const userModel = {
             const [result] = await pool.query(
             `INSERT INTO users (email, password_hash, full_name, avatar_url) 
             VALUES (?, ?, ?, ?)`,
-            [email, password_hash, full_name, avatar_url]
+            [email, passwordHash, fullName, avatar_url]
         );
         return result.insertId;
         } catch (error) {
