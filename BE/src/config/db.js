@@ -40,7 +40,7 @@ try {
     // 5. Chỉ thêm SSL nếu KHÔNG phải là local (tức là khi deploy lên Render)
     if (!isLocal) {
         poolConfig.ssl = {
-            rejectUnauthorized: true
+            rejectUnauthorized: false
         };
     }
 
