@@ -39,29 +39,36 @@ const callAiApiReal = async (imageUrl) => {
         const aiResult = aiResponse.data;
         console.log('[AI Result]', JSON.stringify(aiResult, null, 2)); // Log đẹp để dễ đọc
 
-        // 4. Xử lý kết quả (Giữ nguyên logic cũ của bạn)
+        // 4. Xử lý kết quả trả về (CẬP NHẬT CHO API MỚI)
         let diseaseName = "Không xác định";
         let confidence = 0.0;
+        // Giá trị mặc định
         let description = "AI đã phân tích ảnh nhưng chưa rõ kết luận.";
         let recommendation = "Vui lòng tham khảo ý kiến bác sĩ.";
 
-        if (aiResult) {
-            if (aiResult.class || aiResult.name || aiResult.label) {
-                diseaseName = aiResult.class || aiResult.name || aiResult.label;
-                confidence = aiResult.confidence || aiResult.score || 0.0;
-            } 
-            else if (Array.isArray(aiResult) && aiResult.length > 0) {
-                diseaseName = aiResult[0].class || aiResult[0].name;
-                confidence = aiResult[0].confidence || aiResult[0].score || 0.0;
+        if (aiResult && aiResult.success) {
+            // Lấy tên đầy đủ (VD: "Melanocytic Nevus")
+            diseaseName = aiResult.full_name || aiResult.prediction || "Không xác định";
+            
+            // Lấy độ tin cậy (API trả về 0.98..., ta giữ nguyên hoặc nhân 100 tùy App hiển thị)
+            // Code App của bạn đang nhân 100 ở UI, nên ở đây ta để nguyên số thập phân (0.0 - 1.0)
+            // API của bạn trả về 0.988... (tức là < 1) -> Ổn.
+            // NHƯNG CẨN THẬN: Nếu API trả về 98.8 (lớn hơn 1) thì phải chia 100.
+            // Nhìn log: "confidence": 0.988... -> OK, giữ nguyên.
+            confidence = aiResult.confidence || 0.0;
+
+            // Lấy mô tả từ API (Nếu có)
+            if (aiResult.description) {
+                description = aiResult.description;
+            } else {
+                description = `Hệ thống phát hiện dấu hiệu của: ${diseaseName}.`;
             }
-            else if (aiResult.top1) {
-                 diseaseName = aiResult.top1.name || aiResult.top1.class;
-                 confidence = aiResult.top1.confidence || 0.0;
+
+            // Lấy khuyến nghị từ API (Nếu có)
+            if (aiResult.recommendation) {
+                recommendation = aiResult.recommendation;
             }
         }
-
-        // ... (Phần description giữ nguyên) ...
-        description = `Hệ thống phát hiện dấu hiệu của: ${diseaseName}.`;
 
         return {
             disease_name: diseaseName,
