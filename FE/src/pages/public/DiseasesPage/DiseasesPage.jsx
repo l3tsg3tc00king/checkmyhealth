@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import diseaseService from '../../../services/diseaseService'
+import diseaseService from '../../../services/features/diseaseService.js'
+import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import '../../user/HistoryPage/History.css'
 
@@ -15,7 +16,7 @@ const DiseasesPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(12)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedDisease, setSelectedDisease] = useState(null)
+  const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -44,14 +45,8 @@ const DiseasesPage = () => {
     return diseases.slice(startIndex, endIndex)
   }, [diseases, currentPage, itemsPerPage])
 
-  const handleViewDetail = async (id) => {
-    try {
-      const detail = await diseaseService.getById(id)
-      setSelectedDisease(detail)
-    } catch (err) {
-      console.error('Error loading disease detail:', err)
-      setError('Lỗi khi tải chi tiết bệnh lý')
-    }
+  const handleNavigateDetail = (id) => {
+    navigate(`/diseases/${id}`)
   }
 
   if (!isAuthenticated) {
@@ -102,7 +97,7 @@ const DiseasesPage = () => {
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
               {paginatedDiseases.map((disease) => (
                 <div
                   key={disease.info_id}
@@ -112,7 +107,10 @@ const DiseasesPage = () => {
                     padding: 16,
                     background: 'white',
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
@@ -122,8 +120,17 @@ const DiseasesPage = () => {
                     e.currentTarget.style.boxShadow = 'none'
                     e.currentTarget.style.transform = 'translateY(0)'
                   }}
-                  onClick={() => handleViewDetail(disease.info_id)}
+                  onClick={() => handleNavigateDetail(disease.info_id)}
                 >
+                  {disease.image_url && (
+                    <div style={{ width: '100%', paddingBottom: '56.25%', position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
+                      <img
+                        src={disease.image_url}
+                        alt={disease.disease_name_vi}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                  )}
                   <h3 style={{ margin: '0 0 8px 0', fontSize: 18, fontWeight: 600, color: '#1a202c' }}>
                     {disease.disease_name_vi}
                   </h3>
@@ -132,142 +139,32 @@ const DiseasesPage = () => {
                       Mã: {disease.disease_code}
                     </p>
                   )}
-                  <button
-                    style={{
-                      marginTop: 8,
-                      padding: '6px 12px',
-                      background: '#667eea',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: 'pointer',
-                      fontSize: 14
-                    }}
-                  >
-                    Xem chi tiết
-                  </button>
+                  <span style={{ marginTop: 'auto', fontSize: 14, color: '#6366f1', fontWeight: 600 }}>
+                    Xem chi tiết →
+                  </span>
                 </div>
               ))}
             </div>
 
-            {diseases.length > itemsPerPage && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  style={{ padding: '8px 16px', border: '1px solid #e5e7eb', borderRadius: 4, background: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                >
-                  Trước
-                </button>
-                <span style={{ padding: '8px 16px', display: 'flex', alignItems: 'center' }}>
-                  Trang {currentPage} / {Math.ceil(diseases.length / itemsPerPage)}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(diseases.length / itemsPerPage), p + 1))}
-                  disabled={currentPage >= Math.ceil(diseases.length / itemsPerPage)}
-                  style={{ padding: '8px 16px', border: '1px solid #e5e7eb', borderRadius: 4, background: 'white', cursor: currentPage >= Math.ceil(diseases.length / itemsPerPage) ? 'not-allowed' : 'pointer' }}
-                >
-                  Sau
-                </button>
-              </div>
+            {diseases.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(diseases.length / itemsPerPage))}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={diseases.length}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value)
+                  setCurrentPage(1)
+                }}
+                customItemsPerPage={customItemsPerPage}
+                onCustomItemsPerPageChange={setCustomItemsPerPage}
+                itemLabel="bệnh lý"
+              />
             )}
           </>
         )}
       </div>
-
-      {selectedDisease && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: 20
-          }}
-          onClick={() => setSelectedDisease(null)}
-        >
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 8,
-              padding: 24,
-              maxWidth: 800,
-              maxHeight: '90vh',
-              overflow: 'auto',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedDisease(null)}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                background: 'none',
-                border: 'none',
-                fontSize: 24,
-                cursor: 'pointer',
-                color: '#6b7280'
-              }}
-            >
-              ×
-            </button>
-            <h2 style={{ marginTop: 0, marginBottom: 16 }}>{selectedDisease.disease_name_vi}</h2>
-            {selectedDisease.disease_code && (
-              <p style={{ color: '#6b7280', marginBottom: 16 }}>Mã: {selectedDisease.disease_code}</p>
-            )}
-            {selectedDisease.description && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Mô tả</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedDisease.description}</p>
-              </div>
-            )}
-            {selectedDisease.symptoms && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Triệu chứng</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedDisease.symptoms}</p>
-              </div>
-            )}
-            {selectedDisease.identification_signs && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Dấu hiệu nhận biết</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedDisease.identification_signs}</p>
-              </div>
-            )}
-            {selectedDisease.prevention_measures && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Biện pháp phòng ngừa</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedDisease.prevention_measures}</p>
-              </div>
-            )}
-            {selectedDisease.treatments_medications && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Điều trị và thuốc</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedDisease.treatments_medications}</p>
-              </div>
-            )}
-            {selectedDisease.dietary_advice && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Lời khuyên về chế độ ăn</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedDisease.dietary_advice}</p>
-              </div>
-            )}
-            {selectedDisease.source_references && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>Nguồn tham khảo</h3>
-                <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, color: '#6b7280' }}>{selectedDisease.source_references}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

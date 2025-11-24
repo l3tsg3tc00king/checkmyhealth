@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getDashboardSnapshot } from '../../../services/adminService.js'
+import { getDashboardSnapshot } from '../../../services/features/adminService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
 const AdminDashboard = () => {

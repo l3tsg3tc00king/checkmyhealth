@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getHistoryForUser } from '../../../../services/adminService.js'
+import { getHistoryForUser } from '../../../../services/features/adminService.js'
 import { formatDateAndTime } from '../../../../utils/format.js'
 import './UserHistoryModal.css'
 

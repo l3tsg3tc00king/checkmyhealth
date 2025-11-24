@@ -1,90 +1,153 @@
 const diagnosisModel = require('../models/diagnosis.model');
-// const axios = require('axios'); // Sẽ dùng khi team AI sẵn sàng
+const axios = require('axios');
+const FormData = require('form-data');
+const diseaseModel = require('../models/disease.model');
+const { pool } = require('../config/db');
 
-// --- MOCK FUNCTION (API AI) ---
-const callAiApiMock = async (imageUrl) => {
-    // Giả lập độ trễ mạng (AI đang xử lý)
-    await new Promise(resolve => setTimeout(resolve, 1500)); 
-    
-    console.log(`[Mock AI] Đã nhận ảnh để xử lý: ${imageUrl}`);
-    
-    // Giả lập kết quả
-    return {
-        disease_name: "Bệnh Vẩy Nến (Psoriasis)",
-        confidence_score: 0.92,
-        description: "Đây là mô tả giả lập về bệnh vẩy nến. Ảnh đã được upload thành công.",
-        recommendation: "Bạn nên đi khám bác sĩ da liễu."
-    };
+// === DANH SÁCH CLASS HỢP LỆ VÀ ÁNH XẠ DB ===
+const AI_TO_DB_MAP = {
+    'nv':    'Nevus',                   
+    'vasc':  'Vascular Lesion',          
+    'bcc':   'Basal Cell Carcinoma',    
+    'mel':   'Melanoma',                
+    'bkl':   'Seborrheic Keratosis',    
+    'df':    'Dermatofibroma',          
+    'akiec': 'Actinic Keratosis'        
 };
-// --- END MOCK ---
+
+// === HÀM KIỂM TRA ẢNH CÓ PHẢI DA LIỄU KHÔNG ===
+const validateSkinImage = (aiResult) => {
+    // 1. Kiểm tra class có trong danh sách không
+    const predictedClass = aiResult.prediction;
+    
+    // === SỬA LỖI Ở ĐÂY: Dùng đúng tên biến AI_TO_DB_MAP ===
+    if (!AI_TO_DB_MAP[predictedClass]) {
+        return {
+            isValid: false,
+            reason: 'unknown_class',
+            message: 'AI không nhận diện được đây là ảnh bệnh da liễu trong hệ thống.'
+        };
+    }
+
+    // 2. Kiểm tra confidence
+    const confidence = aiResult.confidence;
+    if (confidence < 0.3) {
+        return {
+            isValid: false,
+            reason: 'low_confidence',
+            message: 'Độ tin cậy quá thấp. Vui lòng chụp ảnh rõ hơn.'
+        };
+    }
+
+    return { isValid: true };
+};
+
+// --- HÀM GỌI API AI THỰC TẾ ---
+const callAiApiReal = async (imageUrl) => {
+    try {
+        console.log(`[AI] Đang tải ảnh: ${imageUrl}`);
+        const imageResponse = await axios.get(imageUrl, { responseType: 'stream', timeout: 15000 });
+        
+        const form = new FormData();
+        form.append('file', imageResponse.data, { filename: 'skin.jpg', contentType: 'image/jpeg' });
+
+        console.log('[AI] Đang gọi Server AI...');
+        const aiResponse = await axios.post('https://skin-lesion-api.fly.dev/predict', form, {
+            headers: { ...form.getHeaders() },
+            timeout: 90000
+        });
+
+        const aiResult = aiResponse.data;
+        
+        // Validation
+        if (!aiResult || !aiResult.success) throw new Error('AI API Error');
+        const validation = validateSkinImage(aiResult);
+        if (!validation.isValid) {
+            return {
+                success: false,
+                error_type: validation.reason,
+                description: validation.message,
+                is_valid_skin_image: false
+            };
+        }
+
+        // === LOGIC LẤY ID VÀ TÊN TỪ DB ===
+        const predictedClass = aiResult.prediction; 
+        const dbDiseaseCode = AI_TO_DB_MAP[predictedClass];
+        
+        let diseaseInfo = null;
+        let diseaseNameVi = "Chưa cập nhật tiếng Việt";
+        let infoId = null;
+
+        try {
+            // Tìm trong bảng skin_diseases_info dựa trên disease_code
+            const [rows] = await pool.query(
+'SELECT info_id, disease_name_vi, description FROM skin_diseases_info WHERE disease_code = ?', 
+                [dbDiseaseCode]
+            );
+            
+            if (rows.length > 0) {
+                diseaseInfo = rows[0];
+                diseaseNameVi = diseaseInfo.disease_name_vi; // Lấy tên tiếng Việt
+                infoId = diseaseInfo.info_id;                // Lấy ID để điều hướng
+            }
+        } catch (dbError) {
+            console.error('DB Error:', dbError);
+        }
+
+        return {
+            success: true,
+            is_valid_skin_image: true,
+            image_url: imageUrl,
+            disease_name: dbDiseaseCode,    // Tên tiếng Anh chuẩn DB
+            disease_name_vi: diseaseNameVi, // Tên tiếng Việt
+            info_id: infoId,                // ID quan trọng để bấm nút xem
+            
+            confidence_score: aiResult.confidence || 0.0,
+            description: diseaseInfo ? diseaseInfo.description : (aiResult.description || ""),
+            recommendation: aiResult.recommendation || "Vui lòng đi khám bác sĩ.",
+            prediction_code: predictedClass
+        };
+
+    } catch (error) {
+        console.error('AI Logic Error:', error.message);
+        return { success: false, error_type: 'processing_error', description: 'Lỗi xử lý ảnh' };
+    }
+};
 
 const diagnosisController = {
-    /**
-     * Xử lý upload ảnh và chẩn đoán
-     */
     diagnose: async (req, res) => {
         try {
-            if (!req.file) {
-                return res.status(400).json({ message: 'Vui lòng upload một file ảnh.' });
-            }
-
-            const userId = req.user.userId;
-
-            // === SỬA LỖI Ở ĐÂY ===
-            // Lấy URL từ 'secure_url' hoặc 'url', không phải 'path'
+            if (!req.file) return res.status(400).json({ message: 'Vui lòng upload ảnh.' });
             const imageUrl = req.file.secure_url || req.file.url;
-            // ====================
-
-            // Kiểm tra lại nếu imageUrl vẫn undefined (dù hiếm)
-            if (!imageUrl) {
-                 return res.status(500).json({ message: 'Lỗi khi upload. Không nhận được URL ảnh.' });
-            }
             
-            const aiResult = await callAiApiMock(imageUrl);
+            const aiResult = await callAiApiReal(imageUrl);
 
-            // Thêm image_url vào kết quả JSON để lưu vào DB
-            const resultToSave = {
-                ...aiResult,
-                image_url: imageUrl // Thêm URL ảnh vào JSON
-            };
+            if (!aiResult.success) {
+                return res.status(400).json(aiResult);
+            }
 
+            // Lưu vào DB
             await diagnosisModel.create(
-                userId,
+                req.user.userId,
                 imageUrl, 
-                aiResult.disease_name,
+                aiResult.disease_name, 
                 aiResult.confidence_score,
-                resultToSave // <-- Lưu JSON đầy đủ (có cả URL)
+                aiResult // Lưu JSON chứa info_id
             );
 
-            // Trả kết quả về cho App Flutter
-            res.status(200).json(resultToSave);
-                
+            res.status(200).json(aiResult);
         } catch (error) {
-            console.error('Lỗi trong hàm diagnose:', error); // Log lỗi chi tiết
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     },
 
-    /**
-     * Lấy lịch sử chẩn đoán
-     */
     getHistory: async (req, res) => {
         try {
-            // 1. Lấy user ID từ token
             const userId = req.user.userId;
-
-            // Cho phép client truyền ?limit=, mặc định 100, tối đa 500
-            const limitParam = parseInt(req.query.limit, 10);
-            const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 100;
-
-            // 2. Gọi model để truy vấn DB
-            const history = await diagnosisModel.findByUserId(userId, limit);
-
-            // 3. Trả về kết quả
+            const history = await diagnosisModel.findByUserId(userId);
             res.status(200).json(history);
-
         } catch (error) {
-            console.error('Lỗi trong hàm getHistory:', error); // Log lỗi chi tiết
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }

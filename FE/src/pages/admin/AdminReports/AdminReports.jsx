@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import '../AdminUsers/AdminUsers.css'
-import { getStatistics, getTimeseries, getBreakdown, exportStatisticsCSV } from '../../../services/adminService.js'
+import { getStatistics, getTimeseries, getBreakdown, exportStatisticsCSV } from '../../../services/features/adminService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
 const StatCard = ({ title, value }) => (

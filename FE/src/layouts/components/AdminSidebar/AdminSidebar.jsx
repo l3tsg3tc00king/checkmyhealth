@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: '/admin/news', label: 'Tin tức' },
   { to: '/admin/diseases', label: 'Bệnh lý' },
   { to: '/admin/users', label: 'Người dùng' },
+  { to: '/admin/feedback', label: 'Phản hồi' },
   { to: '/admin/reports', label: 'Báo cáo' },
 ]
 

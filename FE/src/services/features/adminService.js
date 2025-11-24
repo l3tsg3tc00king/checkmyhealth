@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient.js'
+import { apiClient } from '../api/apiClient.js'
 
 /**
  * Lấy thống kê tổng quan (Admin only)
@@ -185,6 +185,61 @@ export const getHistoryForUser = async (userId) => {
       throw error
     }
     throw new Error(error.message || 'Không thể lấy lịch sử chẩn đoán')
+  }
+}
+
+/**
+ * Lấy danh sách phản hồi (Admin only)
+ */
+export const getFeedbackList = async () => {
+  try {
+    const response = await apiClient('/api/admin/feedback', {
+      method: 'GET',
+    })
+    return Array.isArray(response) ? response : []
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể tải danh sách phản hồi')
+  }
+}
+
+/**
+ * Cập nhật trạng thái phản hồi (Admin only)
+ * @param {number} feedbackId
+ * @param {'pending'|'processing'|'resolved'} status
+ */
+export const updateFeedbackStatus = async (feedbackId, status) => {
+  try {
+    const response = await apiClient(`/api/admin/feedback/${feedbackId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể cập nhật trạng thái phản hồi')
+  }
+}
+
+/**
+ * Xóa phản hồi (Admin only)
+ * @param {number} feedbackId
+ */
+export const deleteFeedback = async (feedbackId) => {
+  try {
+    const response = await apiClient(`/api/admin/feedback/${feedbackId}`, {
+      method: 'DELETE',
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể xóa phản hồi')
   }
 }
 

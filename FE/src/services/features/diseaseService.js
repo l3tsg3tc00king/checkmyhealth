@@ -1,4 +1,17 @@
-import { apiClient } from './apiClient';
+import { apiClient } from '../api/apiClient.js';
+
+const buildFormData = (data = {}) => {
+  if (data instanceof FormData) return data
+
+  const formData = new FormData()
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined || value === null) {
+      return
+    }
+    formData.append(key, value)
+  })
+  return formData
+}
 
 const diseaseService = {
   /**
@@ -35,9 +48,10 @@ const diseaseService = {
    */
   create: async (data) => {
     try {
+      const payload = buildFormData(data)
       const response = await apiClient('/api/diseases', {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: payload
       });
       return response;
     } catch (error) {
@@ -51,9 +65,10 @@ const diseaseService = {
    */
   update: async (id, data) => {
     try {
+      const payload = buildFormData(data)
       const response = await apiClient(`/api/diseases/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data)
+        body: payload
       });
       return response;
     } catch (error) {

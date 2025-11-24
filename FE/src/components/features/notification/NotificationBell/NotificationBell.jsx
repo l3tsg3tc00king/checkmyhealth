@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../../../contexts/AuthContext.jsx'
-import notificationService from '../../../../services/notificationService'
+import notificationService from '../../../../services/features/notificationService.js'
 import './NotificationBell.css'
 
 const NotificationBell = () => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchChatHistory, sendChatMessage } from '../../../services/chatService.js'
+import { fetchChatHistory, sendChatMessage } from '../../../services/features/chatService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './ChatPage.css'
 

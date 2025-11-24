@@ -10,6 +10,7 @@ import RegisterPage from './pages/auth/RegisterPage/RegisterPage.jsx'
 import HomePage from './pages/public/HomePage/HomePage.jsx'
 import NewsPage from './pages/public/NewsPage/NewsPage.jsx'
 import DiseasesPage from './pages/public/DiseasesPage/DiseasesPage.jsx'
+import DiseaseDetailPage from './pages/public/DiseaseDetailPage/DiseaseDetailPage.jsx'
 
 // User pages
 import DiagnosisPage from './pages/user/DiagnosisPage/DiagnosisPage.jsx'
@@ -26,6 +27,7 @@ import AdminUsers from './pages/admin/AdminUsers/AdminUsers.jsx'
 import AdminDiseases from './pages/admin/AdminDiseases/AdminDiseases.jsx'
 import AdminNews from './pages/admin/AdminNews/AdminNews.jsx'
 import AdminReports from './pages/admin/AdminReports/AdminReports.jsx'
+import AdminFeedback from './pages/admin/AdminFeedback/AdminFeedback.jsx'
 
 // Common pages
 import NotFound from './pages/common/NotFound/NotFound.jsx'
@@ -80,6 +82,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+              <Route 
+                path="/diseases/:id"
+                element={
+                  <ProtectedRoute>
+                    <DiseaseDetailPage />
+                  </ProtectedRoute>
+                }
+              />
         <Route 
           path="/schedule" 
           element={
@@ -116,6 +126,7 @@ function App() {
         <Route index element={<AdminDashboard />} />
         <Route path="news" element={<AdminNews />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="feedback" element={<AdminFeedback />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="diseases" element={<AdminDiseases />} />
       </Route>

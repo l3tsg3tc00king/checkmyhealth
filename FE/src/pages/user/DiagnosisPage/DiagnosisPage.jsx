@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import { diagnose } from '../../../services/diagnosisService.js'
+import { diagnose } from '../../../services/features/diagnosisService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './Diagnosis.css'
 
@@ -14,6 +14,7 @@ const DiagnosisPage = () => {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [errorRecommendation, setErrorRecommendation] = useState('')
   const [dragActive, setDragActive] = useState(false)
 
   const handleFileChange = (e) => {
@@ -38,6 +39,7 @@ const DiagnosisPage = () => {
 
     setSelectedFile(file)
     setError('')
+    setErrorRecommendation('')
     setResult(null)
 
     // Create preview
@@ -79,6 +81,7 @@ const DiagnosisPage = () => {
 
     setLoading(true)
     setError('')
+    setErrorRecommendation('')
     setResult(null)
 
     try {
@@ -90,6 +93,7 @@ const DiagnosisPage = () => {
       const errorMsg = err?.message || err?.toString?.() || 'Chẩn đoán thất bại. Vui lòng thử lại.'
       console.error('Diagnosis failed:', errorMsg)
       setError(errorMsg)
+      setErrorRecommendation(err?.recommendation || '')
     } finally {
       setLoading(false)
     }
@@ -100,6 +104,7 @@ const DiagnosisPage = () => {
     setPreview(null)
     setResult(null)
     setError('')
+    setErrorRecommendation('')
   }
 
   const handleViewHistory = () => {
@@ -128,6 +133,11 @@ const DiagnosisPage = () => {
         {error && (
           <div className="diagnosis-error">
             {error}
+          </div>
+        )}
+        {errorRecommendation && (
+          <div className="diagnosis-error diagnosis-error--secondary">
+            {errorRecommendation}
           </div>
         )}
 

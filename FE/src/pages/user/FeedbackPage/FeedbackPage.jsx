@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import feedbackService from '../../../services/feedbackService'
+import feedbackService from '../../../services/features/feedbackService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import '../HistoryPage/History.css'
 

@@ -1,0 +1,236 @@
+.admin-feedback__filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.admin-feedback__search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.admin-feedback__search:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.admin-feedback__status-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-feedback__status-btn {
+  padding: 6px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-feedback__status-btn.active {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.admin-feedback__error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.admin-feedback__loading,
+.admin-feedback__empty {
+  text-align: center;
+  padding: 40px 20px;
+  border: 1px dashed #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+}
+
+.admin-feedback__spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: #6366f1;
+  margin: 0 auto 12px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-feedback__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-feedback__item {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.admin-feedback__item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-feedback__item-meta {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.admin-feedback__badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.admin-feedback__badge.type-suggestion {
+  background: #ecfccb;
+  color: #4d7c0f;
+}
+
+.admin-feedback__badge.type-bug {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-feedback__badge.type-question {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.admin-feedback__badge.type-complaint {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-feedback__badge.type-other {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.admin-feedback__email {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.admin-feedback__status-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-feedback__status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-feedback__status-badge.status-pending {
+  background: #fdf4ff;
+  color: #a21caf;
+}
+
+.admin-feedback__status-badge.status-processing {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.admin-feedback__status-badge.status-resolved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.admin-feedback__status-control select {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+}
+
+.admin-feedback__content {
+  color: #1f2937;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-feedback__content.expanded {
+  display: block;
+}
+
+.admin-feedback__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.admin-feedback__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-feedback__actions .btn {
+  padding: 6px 12px;
+}
+
+.btn.btn-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.btn.btn-danger:hover {
+  background: #fecdd3;
+}
+
+@media (max-width: 640px) {
+  .admin-feedback__item-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-feedback__item-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+

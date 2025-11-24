@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import { getHistory } from '../../../services/diagnosisService.js'
+import { getHistory } from '../../../services/features/diagnosisService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './History.css'
 
@@ -34,21 +34,30 @@ const HistoryPage = () => {
     }
   }
 
+  const getTimestamp = (item) =>
+    item.diagnosed_at || item.created_at || item.createdAt || item.updated_at || null
+
+  const getConfidence = (item) =>
+    item.confidence_score ?? item.result_json?.confidence_score ?? null
+
+  const getDiseaseName = (item) =>
+    item.disease_name || item.result_json?.disease_name || 'Không xác định'
+
   const getSortedHistory = () => {
     const sorted = [...history]
     if (sortBy === 'newest') {
-      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      sorted.sort((a, b) => new Date(getTimestamp(b)) - new Date(getTimestamp(a)))
     } else if (sortBy === 'oldest') {
-      sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      sorted.sort((a, b) => new Date(getTimestamp(a)) - new Date(getTimestamp(b)))
     } else if (sortBy === 'confidence') {
-      sorted.sort((a, b) => (b.confidence_score || 0) - (a.confidence_score || 0))
+      sorted.sort((a, b) => (getConfidence(b) || 0) - (getConfidence(a) || 0))
     }
     return sorted
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A'
-    const date = new Date(dateString)
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'N/A'
+    const date = new Date(dateValue)
     return date.toLocaleString('vi-VN', {
       year: 'numeric',
       month: '2-digit',
@@ -143,14 +152,14 @@ const HistoryPage = () => {
                       )}
                     </div>
                     <div className="history-item-main">
-                      <h3>{item.disease_name || 'Không xác định'}</h3>
+                      <h3>{getDiseaseName(item)}</h3>
                       <div className="history-item-meta">
                         <span className="history-item-date">
-                          {formatDate(item.created_at)}
+                          {formatDate(getTimestamp(item))}
                         </span>
                         <span className="history-item-confidence">
-                          Độ tin cậy: {item.confidence_score 
-                            ? `${(item.confidence_score * 100).toFixed(1)}%`
+                          Độ tin cậy: {getConfidence(item)
+                            ? `${(getConfidence(item) * 100).toFixed(1)}%`
                             : 'N/A'}
                         </span>
                       </div>

@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_TIMEOUT } from '../config/api.js'
+import { API_BASE_URL, API_TIMEOUT } from '../../config/api.js'
 
 const buildUrl = (path) => {
   if (path.startsWith('http')) return path

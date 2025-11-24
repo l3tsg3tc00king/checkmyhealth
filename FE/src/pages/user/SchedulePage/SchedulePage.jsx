@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import scheduleService from '../../../services/scheduleService'
+import scheduleService from '../../../services/features/scheduleService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import '../HistoryPage/History.css'
 

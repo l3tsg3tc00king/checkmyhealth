@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import { updateProfile, updateAvatar } from '../../../services/profileService.js'
+import { updateProfile, updateAvatar } from '../../../services/features/profileService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './Profile.css'
 

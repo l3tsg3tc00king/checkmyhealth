@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import '../AdminUsers/AdminUsers.css'
-import newsService from '../../../services/newsService'
+import newsService from '../../../services/features/newsService.js'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'

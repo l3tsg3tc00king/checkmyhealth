@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import ConfirmDialog from '../../ui/ConfirmDialog/ConfirmDialog.jsx'
-import NotificationBell from '../../features/notification/NotificationBell/NotificationBell.jsx'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
+import NotificationBell from '../../../components/features/notification/NotificationBell/NotificationBell.jsx'
 import './SiteHeader.css'
 
 const SiteHeader = ({ variant = 'site' }) => {

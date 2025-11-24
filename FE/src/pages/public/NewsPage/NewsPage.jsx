@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import '../../user/HistoryPage/History.css'
-import newsService from '../../../services/newsService'
+import newsService from '../../../services/features/newsService.js'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 

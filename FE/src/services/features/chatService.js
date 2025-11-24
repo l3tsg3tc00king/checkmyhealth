@@ -1,6 +1,6 @@
-import { apiClient } from './apiClient.js'
-import { API_BASE_URL } from '../config/api.js'
-import { getToken } from './authService.js'
+import { apiClient } from '../api/apiClient.js'
+import { API_BASE_URL } from '../../config/api.js'
+import { getToken } from '../auth/authService.js'
 
 export const fetchChatHistory = async () => {
   try {

@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient.js'
+import { apiClient } from '../api/apiClient.js'
 
 export const getApiHealth = async () => {
   try {

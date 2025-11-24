@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { login as loginService, logout as logoutService, register as registerService, isAuthenticated, getToken } from '../services/authService.js'
-import { getProfile } from '../services/profileService.js'
+import { login as loginService, logout as logoutService, register as registerService, isAuthenticated, getToken } from '../services/auth/authService.js'
+import { getProfile } from '../services/features/profileService.js'
 import { decodeToken } from '../utils/jwt.js'
 
 const AuthContext = createContext(null)

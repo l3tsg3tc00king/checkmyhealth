@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient.js'
+import { apiClient } from '../api/apiClient.js'
 
 /**
  * Chẩn đoán bệnh da qua hình ảnh
@@ -37,6 +37,7 @@ export const diagnose = async (imageFile) => {
 
     if (!response.ok) {
       let errorMessage = `Lỗi ${response.status}: ${response.statusText}`
+      let recommendation
       
       try {
         const contentType = response.headers.get('content-type') || ''
@@ -45,6 +46,9 @@ export const diagnose = async (imageFile) => {
         if (contentType.includes('application/json')) {
           const errorData = await response.json()
           errorMessage = errorData.message || errorData.error || errorMessage
+          if (errorData?.recommendation) {
+            recommendation = errorData.recommendation
+          }
         } else if (contentType.includes('text/html')) {
           // Nếu HTML, chỉ lấy status text
           errorMessage = `Lỗi máy chủ ${response.status}. Vui lòng kiểm tra kết nối.`
@@ -59,7 +63,11 @@ export const diagnose = async (imageFile) => {
         // Nếu không thể đọc response body, giữ nguyên status message
       }
       
-      throw new Error(errorMessage)
+      const error = new Error(errorMessage)
+      if (recommendation) {
+        error.recommendation = recommendation
+      }
+      throw error
     }
 
     // Đọc response thành công
@@ -88,7 +96,34 @@ export const getHistory = async () => {
     const response = await apiClient('/api/diagnose/history', {
       method: 'GET',
     })
-    return Array.isArray(response) ? response : []
+    if (!Array.isArray(response)) return []
+
+    const safeParse = (value) => {
+      if (!value) return null
+      if (typeof value === 'object') return value
+      try {
+        return JSON.parse(value)
+      } catch {
+        return null
+      }
+    }
+
+    return response.map((entry) => {
+      const parsed = safeParse(entry.result_json)
+      const timestamp =
+        entry.diagnosed_at ||
+        entry.created_at ||
+        entry.createdAt ||
+        entry.updated_at ||
+        null
+
+      return {
+        ...entry,
+        result_json: parsed || entry.result_json,
+        diagnosed_at: entry.diagnosed_at || null,
+        created_at: entry.created_at || timestamp,
+      }
+    })
   } catch (error) {
     if (error.message.includes('401') || error.message.includes('hết hạn')) {
       throw error

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import '../AdminUsers/AdminUsers.css'
-import diseaseService from '../../../services/diseaseService'
+import diseaseService from '../../../services/features/diseaseService.js'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
@@ -17,6 +17,7 @@ const AdminDiseases = () => {
   const [confirmTarget, setConfirmTarget] = useState(null)
   const [editMode, setEditMode] = useState(false)
   const [editingDisease, setEditingDisease] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [formData, setFormData] = useState({
     disease_code: '',
     disease_name_vi: '',
@@ -26,14 +27,25 @@ const AdminDiseases = () => {
     prevention_measures: '',
     treatments_medications: '',
     dietary_advice: '',
-    source_references: ''
+    source_references: '',
+    image_url: ''
   })
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState('')
 
-  const loadDiseases = async () => {
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+    }
+  }, [imagePreview])
+
+  const loadDiseases = async (keyword = searchTerm) => {
     try {
       setLoading(true)
       setError('')
-      const data = await diseaseService.getAll()
+      const data = await diseaseService.getAll(keyword)
       setDiseases(data || [])
       setCurrentPage(1)
     } catch (err) {
@@ -54,6 +66,16 @@ const AdminDiseases = () => {
     return diseases.slice(startIndex, endIndex)
   }, [diseases, currentPage, itemsPerPage])
 
+  const handleSearchSubmit = (event) => {
+    event.preventDefault()
+    loadDiseases(searchTerm.trim())
+  }
+
+  const handleClearSearch = () => {
+    setSearchTerm('')
+    loadDiseases('')
+  }
+
   const handleAdd = () => {
     setEditMode(true)
     setEditingDisease(null)
@@ -66,8 +88,14 @@ const AdminDiseases = () => {
       prevention_measures: '',
       treatments_medications: '',
       dietary_advice: '',
-      source_references: ''
+      source_references: '',
+      image_url: ''
     })
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImagePreview('')
+    setImageFile(null)
   }
 
   const handleEdit = async (disease) => {
@@ -87,14 +115,39 @@ const AdminDiseases = () => {
         prevention_measures: fullDisease.prevention_measures || '',
         treatments_medications: fullDisease.treatments_medications || '',
         dietary_advice: fullDisease.dietary_advice || '',
-        source_references: fullDisease.source_references || ''
+        source_references: fullDisease.source_references || '',
+        image_url: fullDisease.image_url || ''
       })
+      setImageFile(null)
+      setImagePreview(fullDisease.image_url || '')
     } catch (err) {
       console.error('Failed to load disease details:', err)
       setError('Lỗi khi tải thông tin chi tiết bệnh lý')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+    setFormData((prev) => ({ ...prev, image_url: '' }))
+  }
+
+  const handleRemoveImage = () => {
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImagePreview('')
+    setImageFile(null)
+    setFormData((prev) => ({ ...prev, image_url: '' }))
   }
 
   const handleSave = async () => {
@@ -105,18 +158,43 @@ const AdminDiseases = () => {
 
     try {
       setError('')
+      const payload = {
+        ...formData,
+        image_url: formData.image_url || ''
+      }
+
+      if (imageFile) {
+        payload.image = imageFile
+      }
+
       if (editingDisease) {
-        await diseaseService.update(editingDisease.info_id, formData)
+        await diseaseService.update(editingDisease.info_id, payload)
       } else {
-        await diseaseService.create(formData)
+        await diseaseService.create(payload)
       }
       setEditMode(false)
       setEditingDisease(null)
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+      setImagePreview('')
+      setImageFile(null)
       await loadDiseases()
     } catch (err) {
       console.error('Failed to save disease:', err)
       setError(err.response?.data?.message || 'Lỗi khi lưu bệnh lý')
     }
+  }
+
+  const handleCancelEdit = () => {
+    setEditMode(false)
+    setEditingDisease(null)
+    setError('')
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImagePreview('')
+    setImageFile(null)
   }
 
   const handleDelete = async (id) => {
@@ -155,9 +233,28 @@ const AdminDiseases = () => {
           <p>Quản lý danh sách bệnh lý da liễu</p>
         </div>
         {!editMode && (
-          <button className="btn btn-primary" onClick={handleAdd}>
-            Thêm bệnh lý mới
-          </button>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="Tìm theo tên hoặc mã bệnh..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e5e7eb', minWidth: 240 }}
+              />
+              <button type="submit" className="btn">
+                Tìm kiếm
+              </button>
+              {searchTerm && (
+                <button type="button" className="btn" onClick={handleClearSearch}>
+                  Xóa
+                </button>
+              )}
+            </form>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              Thêm bệnh lý mới
+            </button>
+          </div>
         )}
       </header>
 
@@ -190,6 +287,33 @@ const AdminDiseases = () => {
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
                 placeholder="VD: Bệnh vẩy nến"
               />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Ảnh minh họa</label>
+              {imagePreview ? (
+                <div style={{ marginBottom: 8 }}>
+                  <img
+                    src={imagePreview}
+                    alt="Xem trước ảnh bệnh"
+                    style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }}
+                  />
+                </div>
+              ) : (
+                <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: 14 }}>Chưa có ảnh được chọn</p>
+              )}
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ flex: 1 }}
+                />
+                {imagePreview && (
+                  <button type="button" className="btn" onClick={handleRemoveImage}>
+                    Xóa ảnh
+                  </button>
+                )}
+              </div>
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Mô tả</label>
@@ -258,7 +382,7 @@ const AdminDiseases = () => {
               <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
                 {editingDisease ? 'Cập nhật' : 'Thêm mới'}
               </button>
-              <button className="btn" onClick={() => { setEditMode(false); setEditingDisease(null); setError('') }}>
+              <button className="btn" onClick={handleCancelEdit}>
                 Hủy
               </button>
             </div>
@@ -282,15 +406,24 @@ const AdminDiseases = () => {
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {paginatedDiseases.map((d) => (
-                  <div key={d.info_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, border: '1px solid #e5e7eb', borderRadius: 6 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{d.disease_name_vi}</div>
-                      <div style={{ color: '#6b7280', fontSize: 14 }}>Mã: {d.disease_code || 'N/A'}</div>
-                      {d.description && (
-                        <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 4, maxWidth: '80%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {d.description}
-                        </div>
+                  <div key={d.info_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, border: '1px solid #e5e7eb', borderRadius: 6, gap: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                      {d.image_url && (
+                        <img
+                          src={d.image_url}
+                          alt={d.disease_name_vi}
+                          style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb', flexShrink: 0 }}
+                        />
                       )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{d.disease_name_vi}</div>
+                        <div style={{ color: '#6b7280', fontSize: 14 }}>Mã: {d.disease_code || 'N/A'}</div>
+                        {d.description && (
+                          <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 4, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {d.description}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button className="btn" onClick={() => handleEdit(d)}>Sửa</button>

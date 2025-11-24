@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { getUsers, createUser } from '../../../services/adminService.js'
+import { getUsers, createUser } from '../../../services/features/adminService.js'
 import { formatDateAndTime } from '../../../utils/format.js'
 import SortableTableHeader from '../../../components/ui/SortableTableHeader/SortableTableHeader.jsx'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'

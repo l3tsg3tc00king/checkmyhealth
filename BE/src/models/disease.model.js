@@ -4,7 +4,7 @@ const diseaseModel = {
     // Lấy danh sách (có tìm kiếm)
     getAll: async (search = '') => {
         try {
-            let query = 'SELECT info_id, disease_code, disease_name_vi FROM skin_diseases_info';
+            let query = 'SELECT info_id, disease_code, disease_name_vi, image_url FROM skin_diseases_info';
             let params = [];
 
             if (search) {
@@ -38,8 +38,8 @@ const diseaseModel = {
         try {
             const sql = `
                 INSERT INTO skin_diseases_info 
-                (disease_code, disease_name_vi, description, symptoms, identification_signs, prevention_measures, treatments_medications, dietary_advice, source_references)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (disease_code, disease_name_vi, description, symptoms, identification_signs, prevention_measures, treatments_medications, dietary_advice, source_references, image_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const [result] = await pool.query(sql, [
                 data.disease_code,
@@ -50,7 +50,8 @@ const diseaseModel = {
                 data.prevention_measures,
                 data.treatments_medications,
                 data.dietary_advice,
-                data.source_references
+                data.source_references,
+                data.image_url || null
             ]);
             return result.insertId;
         } catch (error) {
@@ -66,7 +67,7 @@ const diseaseModel = {
                 UPDATE skin_diseases_info SET
                 disease_code = ?, disease_name_vi = ?, description = ?, symptoms = ?, 
                 identification_signs = ?, prevention_measures = ?, treatments_medications = ?, 
-                dietary_advice = ?, source_references = ?
+                dietary_advice = ?, source_references = ?, image_url = ?
                 WHERE info_id = ?
             `;
             await pool.query(sql, [
@@ -79,6 +80,7 @@ const diseaseModel = {
                 data.treatments_medications,
                 data.dietary_advice,
                 data.source_references,
+                data.image_url || null,
                 id
             ]);
             return true;

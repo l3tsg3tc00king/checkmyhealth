@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient.js'
+import { apiClient } from '../api/apiClient.js'
 
 /**
  * Lấy thông tin hồ sơ người dùng
