@@ -1,16 +1,18 @@
 const diagnosisModel = require('../models/diagnosis.model');
 const axios = require('axios');
 const FormData = require('form-data');
+const diseaseModel = require('../models/disease.model');
+const { pool } = require('../config/db');
 
 // === DANH SÁCH CLASS HỢP LỆ ===
-const VALID_DISEASE_CLASSES = {
-    'akiec': 'Actinic Keratoses',
-    'bcc': 'Basal Cell Carcinoma', 
-    'bkl': 'Benign Keratosis',
-    'df': 'Dermatofibroma',
-    'mel': 'Melanoma',
-    'nv': 'Melanocytic Nevus',
-    'vasc': 'Vascular Lesion'
+const AI_TO_DB_MAP = {
+    'akiec': 'Actinic Keratosis',       // Dày sừng quang hóa
+    'bcc':   'Basal Cell Carcinoma',    // Ung thư biểu mô tế bào đáy
+    'bkl':   'Seborrheic Keratosis',    // Dày sừng tiết bã (Thường map BKL với cái này)
+    'df':    'Dermatofibroma',          // U xơ da
+    'mel':   'Melanoma',                // Ung thư hắc tố
+    'nv':    'Nevus',                   // Nốt ruồi
+    'vasc':  'Vascular Lesion'          // Tổn thương mạch máu
 };
 
 // === HÀM KIỂM TRA ẢNH CÓ PHẢI DA LIỄU KHÔNG ===
@@ -95,148 +97,93 @@ const callAiApiReal = async (imageUrl) => {
         console.log('[AI Result]', JSON.stringify(aiResult, null, 2));
 
         // === 4. VALIDATION - KIỂM TRA ẢNH CÓ HỢP LỆ KHÔNG ===
-        if (!aiResult || !aiResult.success) {
-            throw new Error('AI API trả về kết quả không hợp lệ');
-        }
-
+       if (!aiResult || !aiResult.success) throw new Error('AI API Error');
         const validation = validateSkinImage(aiResult);
-        
         if (!validation.isValid) {
-            // Trả về lỗi validation với thông báo cụ thể
             return {
                 success: false,
                 error_type: validation.reason,
-                disease_name: "Không phải ảnh bệnh da",
-                confidence_score: 0.0,
                 description: validation.message,
-                recommendation: "Vui lòng chụp ảnh vùng da bị tổn thương với ánh sáng đủ và góc chụp rõ ràng.",
                 is_valid_skin_image: false
             };
         }
-        // ================================================
 
-        // 5. Map dữ liệu từ AI API sang format Backend
-        const result = {
+        // === LOGIC MỚI: LẤY THÔNG TIN TỪ DB CỦA BẠN ===
+        const predictedClass = aiResult.prediction; // VD: 'bcc'
+        const dbDiseaseCode = AI_TO_DB_MAP[predictedClass]; // VD: 'Basal Cell Carcinoma'
+        
+        let diseaseInfo = null;
+        let diseaseNameVi = "Chưa cập nhật";
+        let infoId = null;
+
+        // Truy vấn DB để lấy tên tiếng Việt và ID
+        try {
+            const [rows] = await pool.query(
+                'SELECT info_id, disease_name_vi, description FROM skin_diseases_info WHERE disease_code = ?', 
+                [dbDiseaseCode]
+            );
+            
+            if (rows.length > 0) {
+                diseaseInfo = rows[0];
+                diseaseNameVi = diseaseInfo.disease_name_vi;
+                infoId = diseaseInfo.info_id;
+            }
+        } catch (dbError) {
+            console.error('Error fetching disease info:', dbError);
+        }
+        // ===============================================
+
+        return {
             success: true,
             is_valid_skin_image: true,
-            disease_name: aiResult.full_name || aiResult.prediction || "Không xác định",
+            
+            // Tên tiếng Anh (đúng chuẩn DB)
+            disease_name: dbDiseaseCode, 
+            // Tên tiếng Việt (Lấy từ DB)
+            disease_name_vi: diseaseNameVi,
+            // ID để frontend điều hướng (quan trọng)
+            info_id: infoId,
+            
             confidence_score: aiResult.confidence || 0.0,
-            description: aiResult.description || `Phát hiện dấu hiệu của: ${aiResult.full_name}`,
+            description: diseaseInfo ? diseaseInfo.description : (aiResult.description || "Đang cập nhật"),
             recommendation: aiResult.recommendation || "Vui lòng tham khảo ý kiến bác sĩ",
-            risk_level: aiResult.risk_level || "unknown",
             
-            // Thông tin bổ sung
-            prediction_code: aiResult.prediction,
+            prediction_code: predictedClass,
             top5_predictions: aiResult.top5 || [],
-            inference_time_ms: aiResult.inference_time_ms || 0,
-            
-            // Raw data
-            raw_data: aiResult
         };
 
-        console.log('[AI Result Validated & Mapped]', JSON.stringify(result, null, 2));
-        return result;
-
     } catch (error) {
-        console.error('=== AI API ERROR ===');
-        
-        if (error.response) {
-            console.error('[Status]', error.response.status);
-            console.error('[Data]', error.response.data);
-            
-            return {
-                success: false,
-                error_type: 'ai_server_error',
-                disease_name: "Lỗi từ AI Server",
-                confidence_score: 0.0,
-                description: `AI Server trả về lỗi: ${error.response.status}`,
-                recommendation: "Vui lòng thử lại sau",
-                is_valid_skin_image: null
-            };
-            
-        } else if (error.request) {
-            console.error('[Request Error] Không nhận được phản hồi từ AI Server');
-            
-            return {
-                success: false,
-                error_type: 'timeout',
-                disease_name: "Timeout kết nối AI",
-                confidence_score: 0.0,
-                description: "Máy chủ AI đang khởi động hoặc quá tải. Vui lòng thử lại sau 30 giây.",
-                recommendation: "Nếu lỗi vẫn tiếp diễn, vui lòng liên hệ support",
-                is_valid_skin_image: null
-            };
-            
-        } else {
-            console.error('[Error Message]', error.message);
-            
-            return {
-                success: false,
-                error_type: 'processing_error',
-                disease_name: "Lỗi xử lý",
-                confidence_score: 0.0,
-                description: "Có lỗi xảy ra khi xử lý ảnh",
-                recommendation: "Vui lòng kiểm tra định dạng ảnh và thử lại",
-                is_valid_skin_image: null
-            };
-        }
+        console.error('AI Logic Error:', error);
+        return { success: false, error_type: 'processing_error', description: 'Lỗi xử lý ảnh' };
     }
 };
 
 const diagnosisController = {
     diagnose: async (req, res) => {
         try {
-            if (!req.file) {
-                return res.status(400).json({ message: 'Vui lòng upload một file ảnh.' });
-            }
-
-            const userId = req.user.userId;
+            if (!req.file) return res.status(400).json({ message: 'Vui lòng upload ảnh.' });
             const imageUrl = req.file.secure_url || req.file.url;
-
-            if (!imageUrl) {
-                return res.status(500).json({ message: 'Lỗi khi upload. Không nhận được URL ảnh.' });
-            }
             
-            // Gọi AI
+            // Gọi AI + Tra cứu DB
             const aiResult = await callAiApiReal(imageUrl);
 
-            // === KIỂM TRA KẾT QUẢ VALIDATION ===
             if (!aiResult.success || aiResult.is_valid_skin_image === false) {
-                // Không lưu vào database nếu ảnh không hợp lệ
-                return res.status(400).json({
-                    success: false,
-                    message: aiResult.description,
-                    error_type: aiResult.error_type,
-                    recommendation: aiResult.recommendation
-                });
+                return res.status(400).json(aiResult);
             }
-            // ====================================
 
-            // Chuẩn bị dữ liệu lưu DB
-            const resultToSave = {
-                ...aiResult,
-                image_url: imageUrl
-            };
-
-            // Lưu vào Database
+            // Lưu lịch sử
             await diagnosisModel.create(
-                userId,
+                req.user.userId,
                 imageUrl, 
-                aiResult.disease_name,
+                aiResult.disease_name, // Lưu tên tiếng Anh chuẩn
                 aiResult.confidence_score,
-                resultToSave 
+                aiResult // Lưu toàn bộ JSON (bao gồm info_id và tên tiếng Việt)
             );
 
-            // Trả kết quả về cho App
-            res.status(200).json(resultToSave);
+            res.status(200).json(aiResult);
                 
         } catch (error) {
-            console.error('Lỗi trong hàm diagnose:', error);
-            res.status(500).json({ 
-                success: false,
-                message: 'Lỗi máy chủ', 
-                error: error.message 
-            });
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     },
 
