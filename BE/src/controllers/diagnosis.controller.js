@@ -6,13 +6,27 @@ const { pool } = require('../config/db');
 
 // === DANH SÁCH CLASS HỢP LỆ ===
 const AI_TO_DB_MAP = {
-    'akiec': 'Actinic Keratosis',       // Dày sừng quang hóa
-    'bcc':   'Basal Cell Carcinoma',    // Ung thư biểu mô tế bào đáy
-    'bkl':   'Seborrheic Keratosis',    // Dày sừng tiết bã (Thường map BKL với cái này)
-    'df':    'Dermatofibroma',          // U xơ da
-    'mel':   'Melanoma',                // Ung thư hắc tố
-    'nv':    'Nevus',                   // Nốt ruồi
-    'vasc':  'Vascular Lesion'          // Tổn thương mạch máu
+    // 1. AI: nv (Melanocytic nevi) -> DB: Nevus
+    'nv':    'Nevus',                   
+
+    // 2. AI: vasc (Vascular lesions) -> DB: Vascular Lesion (Lưu ý: DB dùng số ít)
+    'vasc':  'Vascular Lesion',          
+
+    // 3. AI: bcc (Basal cell carcinoma) -> DB: Basal Cell Carcinoma
+    'bcc':   'Basal Cell Carcinoma',    
+
+    // 4. AI: mel (Melanoma) -> DB: Melanoma
+    'mel':   'Melanoma',                
+
+    // 5. AI: bkl (Benign keratosis) -> DB: Seborrheic Keratosis 
+    // (Lưu ý: Trong y khoa và dataset, BKL thường ám chỉ Dày sừng tiết bã - Seborrheic Keratosis có trong DB của bạn)
+    'bkl':   'Seborrheic Keratosis',    
+
+    // 6. AI: df (Dermatofibroma) -> DB: Dermatofibroma
+    'df':    'Dermatofibroma',          
+
+    // 7. AI: akiec (Actinic keratoses) -> DB: Actinic Keratosis (Lưu ý: DB dùng số ít)
+    'akiec': 'Actinic Keratosis'        
 };
 
 // === HÀM KIỂM TRA ẢNH CÓ PHẢI DA LIỄU KHÔNG ===
