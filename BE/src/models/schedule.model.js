@@ -41,7 +41,11 @@ const scheduleModel = {
     getTasksByDate: async (userId, dateStr, dayOfWeek) => {
         try {
             const sql = `
-                SELECT s.*, l.status as log_status, l.completed_at
+                SELECT 
+                    s.*, 
+                    l.status as log_status, 
+                    l.completed_at,
+                    DATE_FORMAT(s.specific_date, '%Y-%m-%d') as specific_date
                 FROM schedules s
                 LEFT JOIN schedule_logs l 
                     ON s.schedule_id = l.schedule_id 

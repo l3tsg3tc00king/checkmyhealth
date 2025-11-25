@@ -13,6 +13,10 @@ const SchedulePage = () => {
   const [error, setError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState(null) // ID của lịch trình đang edit
+  const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0]
+  }
+
   const [formData, setFormData] = useState({
     title: '',
     type: 'medication',
@@ -87,12 +91,47 @@ const SchedulePage = () => {
         specific_date: formData.schedule_type === 'once' ? formData.specific_date : null
       }
       
+      // Lưu lại specific_date trước khi reset form để dùng cho việc reload
+      const savedSpecificDate = formData.specific_date
+      const savedScheduleType = formData.schedule_type
+      
       if (editingId) {
         // Update existing schedule
         await scheduleService.update(editingId, payload)
+        
+        // Fix: Nếu là lịch trình 1 lần, LUÔN chuyển selectedDate sang ngày mới để hiển thị đúng
+        if (savedScheduleType === 'once' && savedSpecificDate) {
+          // Cập nhật selectedDate
+          setSelectedDate(savedSpecificDate)
+          // Đợi state update rồi load tasks với ngày mới
+          // Dùng setTimeout để đảm bảo state đã update
+          setTimeout(async () => {
+            const dayOfWeek = getDayOfWeek(savedSpecificDate)
+            const data = await scheduleService.getDailyTasks(savedSpecificDate, dayOfWeek)
+            setTasks(data || [])
+          }, 50)
+        } else {
+          // Nếu không phải lịch trình 1 lần hoặc không có ngày, reload ngay với ngày hiện tại
+          await loadTasks()
+        }
       } else {
         // Create new schedule
         await scheduleService.create(payload)
+        
+        // Nếu là lịch trình 1 lần mới, chuyển sang ngày đó để xem
+        if (savedScheduleType === 'once' && savedSpecificDate) {
+          // Cập nhật selectedDate
+          setSelectedDate(savedSpecificDate)
+          // Đợi state update rồi load tasks với ngày mới
+          setTimeout(async () => {
+            const dayOfWeek = getDayOfWeek(savedSpecificDate)
+            const data = await scheduleService.getDailyTasks(savedSpecificDate, dayOfWeek)
+            setTasks(data || [])
+          }, 50)
+        } else {
+          // Nếu không phải lịch trình 1 lần, reload ngay với ngày hiện tại
+          await loadTasks()
+        }
       }
       
       setShowAddForm(false)
@@ -105,7 +144,6 @@ const SchedulePage = () => {
         schedule_type: 'repeat',
         specific_date: ''
       })
-      await loadTasks()
     } catch (err) {
       console.error('Error saving schedule:', err)
       setError(err.response?.data?.message || (editingId ? 'Lỗi khi cập nhật lịch trình' : 'Lỗi khi tạo lịch trình'))
@@ -117,13 +155,37 @@ const SchedulePage = () => {
     const repeatDays = task.repeat_days ? task.repeat_days.split(',').map(d => d.trim()).filter(Boolean) : []
     const scheduleType = repeatDays.length > 0 ? 'repeat' : 'once'
     
+    // Fix: Format specific_date từ Date object hoặc string về YYYY-MM-DD
+    // MySQL DATE type có thể trả về Date object hoặc string, cần xử lý cẩn thận
+    let formattedDate = ''
+    if (task.specific_date) {
+      // Convert về string trước để xử lý đồng nhất
+      let dateStr = ''
+      if (task.specific_date instanceof Date) {
+        // Nếu là Date object, convert sang ISO string
+        dateStr = task.specific_date.toISOString()
+      } else {
+        dateStr = String(task.specific_date)
+      }
+      
+      // Lấy phần YYYY-MM-DD đầu tiên (bỏ qua time và timezone)
+      // Xử lý các format: "2023-11-25", "2023-11-25T00:00:00.000Z", "2023-11-25 00:00:00"
+      const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})/)
+      if (dateMatch && dateMatch[1]) {
+        formattedDate = dateMatch[1]
+      } else if (dateStr.length >= 10) {
+        // Fallback: lấy 10 ký tự đầu nếu không match được
+        formattedDate = dateStr.substring(0, 10)
+      }
+    }
+    
     setFormData({
       title: task.title || '',
       type: task.type || 'medication',
       reminder_time: task.reminder_time || '08:00',
       repeat_days: repeatDays,
       schedule_type: scheduleType,
-      specific_date: task.specific_date || ''
+      specific_date: formattedDate
     })
     setEditingId(task.schedule_id)
     setShowAddForm(true)
@@ -144,6 +206,17 @@ const SchedulePage = () => {
       specific_date: ''
     })
     setError('')
+  }
+
+  const handleScheduleTypeChange = (newType) => {
+    if (newType === 'once') {
+      // Khi chọn "Một lần", mặc định set ngày hôm nay
+      const today = getTodayDate()
+      setFormData({ ...formData, schedule_type: newType, repeat_days: [], specific_date: formData.specific_date || today })
+    } else {
+      // Khi chọn "Lặp lại", xóa specific_date
+      setFormData({ ...formData, schedule_type: newType, specific_date: '' })
+    }
   }
 
   const handleDeleteSchedule = async (id) => {
@@ -265,7 +338,7 @@ const SchedulePage = () => {
                       name="schedule_type"
                       value="repeat"
                       checked={formData.schedule_type === 'repeat'}
-                      onChange={(e) => setFormData({ ...formData, schedule_type: e.target.value, specific_date: '' })}
+                      onChange={(e) => handleScheduleTypeChange(e.target.value)}
                     />
                     <span>Lặp lại hàng tuần</span>
                   </label>
@@ -275,7 +348,7 @@ const SchedulePage = () => {
                       name="schedule_type"
                       value="once"
                       checked={formData.schedule_type === 'once'}
-                      onChange={(e) => setFormData({ ...formData, schedule_type: e.target.value, repeat_days: [] })}
+                      onChange={(e) => handleScheduleTypeChange(e.target.value)}
                     />
                     <span>Một lần</span>
                   </label>
@@ -312,7 +385,7 @@ const SchedulePage = () => {
                       type="date"
                       value={formData.specific_date}
                       onChange={(e) => setFormData({ ...formData, specific_date: e.target.value })}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={getTodayDate()}
                       style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
                     />
                     <p style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>
