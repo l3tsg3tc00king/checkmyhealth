@@ -10,5 +10,6 @@ router.get('/daily', scheduleController.getDailyTasks); // Lấy task của ngà
 router.put('/:scheduleId/toggle', scheduleController.toggleTask); // Check xong
 router.delete('/:id', scheduleController.deleteSchedule);
 router.get('/stats', scheduleController.getStats); // Thống kê
+router.put('/:id', scheduleController.updateSchedule);
 
 module.exports = router;

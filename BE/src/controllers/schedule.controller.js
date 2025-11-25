@@ -1,15 +1,32 @@
 const scheduleModel = require('../models/schedule.model');
 
 const scheduleController = {
-    // Tạo mới
-    createSchedule: async (req, res) => {
+   createSchedule: async (req, res) => {
         try {
-            // repeat_days: "2,3,4,5,6,7,8"
-            const { title, type, reminder_time, repeat_days } = req.body;
+            // specific_date: "2023-11-25" (Optional)
+            const { title, type, reminder_time, repeat_days, specific_date } = req.body;
             if (!title || !reminder_time) return res.status(400).json({ message: 'Thiếu thông tin' });
 
-           const id = await scheduleModel.create(req.user.userId, { title, type, reminder_time, repeat_days });
+            // Logic: Nếu không có repeat_days thì bắt buộc phải có specific_date
+            if ((!repeat_days || repeat_days.length === 0) && !specific_date) {
+                return res.status(400).json({message: 'Phải chọn ngày lặp lại hoặc ngày cụ thể'});
+            }
+
+            const id = await scheduleModel.create(req.user.userId, { title, type, reminder_time, repeat_days, specific_date });
             res.status(201).json({ message: 'Đã tạo lịch trình', id: id });
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi server', error: error.message });
+        }
+    },
+
+    // --- HÀM MỚI: Update ---
+    updateSchedule: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { title, type, reminder_time, repeat_days, specific_date } = req.body;
+            
+            await scheduleModel.update(req.user.userId, id, { title, type, reminder_time, repeat_days, specific_date });
+            res.status(200).json({ message: 'Cập nhật thành công' });
         } catch (error) {
             res.status(500).json({ message: 'Lỗi server', error: error.message });
         }

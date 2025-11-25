@@ -73,6 +73,22 @@ const scheduleService = {
       console.error('Error fetching stats:', error);
       throw error;
     }
+  },
+
+  /**
+   * Cập nhật lịch trình
+   */
+  update: async (id, data) => {
+    try {
+      const response = await apiClient(`/api/schedules/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response;
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      throw error;
+    }
   }
 };
 
