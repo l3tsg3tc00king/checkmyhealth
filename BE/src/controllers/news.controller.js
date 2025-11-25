@@ -136,7 +136,6 @@ const newsController = {
         return res.status(400).json({ message: 'URL is required' });
       }
 
-      // Validate URL format
       let parsedUrl;
       try {
         parsedUrl = new URL(url);
@@ -144,7 +143,6 @@ const newsController = {
         return res.status(400).json({ message: 'Invalid URL format' });
       }
 
-      // Allowlist dựa trên DB (fallback sang biến môi trường)
       const allowedHosts = await getAllowedHosts();
       const hostAllowed = allowedHosts.some(allowed =>
         parsedUrl.hostname === allowed || parsedUrl.hostname.endsWith(`.${allowed}`)
@@ -154,19 +152,16 @@ const newsController = {
         return res.status(400).json({ message: 'Host không được phép scrape.' });
       }
 
-      // Fetch page (giảm timeout để tránh giữ kết nối lâu)
       const response = await axios.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
-        timeout: 8000
+        timeout: 10000 // Tăng timeout một chút
       });
 
       const $ = cheerio.load(response.data);
       const articles = [];
 
-      // Generic article selectors that work with many news sites
-      // Try common article containers
       const selectors = [
         'article',
         '.article-item',
@@ -174,21 +169,22 @@ const newsController = {
         '.post-item',
         '[data-article]',
         '.entry-item',
-        '.item-news'
+        '.item-news',
+        '.list-news-subfolder .item-news-item' // Thêm selector đặc thù của VnExpress
       ];
 
-      let foundArticles = false;
-
+      // === THAY ĐỔI 1: Lặp qua TẤT CẢ selector, không break ===
       for (const selector of selectors) {
-        $(selector).slice(0, 10).each((i, elem) => {
+        // === THAY ĐỔI 2: Tăng giới hạn quét mỗi selector từ 10 lên 50 ===
+        $(selector).slice(0, 50).each((i, elem) => {
           try {
             const $elem = $(elem);
 
-            // Try to extract title
-            let title = $elem.find('h2, h3, .title, .headline').text().trim() ||
+            // Logic lấy Title, Link, Image giữ nguyên
+            let title = $elem.find('h2, h3, .title, .headline, .title-news').text().trim() ||
+                       $elem.find('a').first().attr('title') || 
                        $elem.find('a').first().text().trim();
 
-            // Try to extract link
             let link = $elem.find('a').first().attr('href') ||
                       $elem.attr('href');
 
@@ -196,45 +192,51 @@ const newsController = {
               link = parsedUrl.origin + link;
             }
 
-            // Try to extract image
             let image = $elem.find('img').first().attr('src') ||
-                       $elem.find('img').first().attr('data-src');
+                       $elem.find('img').first().attr('data-src') ||
+                       $elem.find('video').first().attr('poster'); // Hỗ trợ poster video
 
             if (image && image.startsWith('/')) {
               image = parsedUrl.origin + image;
             }
 
-            // Try to extract description/preview
+            // Lọc ảnh icon nhỏ hoặc ảnh rỗng (VnExpress hay dính ảnh gif 1x1)
+            if (image && (image.includes('data:image') || image.length < 50)) {
+                image = null; 
+            }
+
             let description = $elem.find('.description, .summary, .excerpt, .lead, p').first().text().trim();
             if (!description) {
               description = $elem.find('p').first().text().trim();
             }
-            description = description ? description.substring(0, 150) : '';
+            description = description ? description.substring(0, 150) + '...' : '';
 
-            if (title && link) {
+            // Chỉ lấy tin có đủ Tiêu đề, Link và Ảnh (để lên app cho đẹp)
+            if (title && link && title.length > 10) {
               articles.push({
-                id: `${i}-${Date.now()}`,
-                title: title.substring(0, 150),
+                id: `${articles.length}-${Date.now()}`, // ID unique tạm thời
+                title: title,
                 description: description,
                 link: link,
-                image: image || null,
-                source: parsedUrl.hostname
+                image: image || 'https://via.placeholder.com/300x200.png?text=No+Image', // Ảnh mặc định nếu thiếu
+                source: parsedUrl.hostname,
+                timestamp: Date.now()
               });
-              foundArticles = true;
             }
           } catch (e) {
-            // Skip this item and continue
+            // Bỏ qua item lỗi
           }
         });
-
-        if (foundArticles && articles.length > 0) break;
+        
+        // === QUAN TRỌNG: ĐÃ XÓA LỆNH BREAK ĐỂ NÓ QUÉT HẾT CÁC SELECTOR ===
       }
 
-      // Remove duplicates by link
+      // Lọc trùng lặp (do quét nhiều selector có thể trùng bài)
       const uniqueArticles = [];
       const seenLinks = new Set();
       for (const article of articles) {
-        if (!seenLinks.has(article.link)) {
+        // Bỏ qua các link quảng cáo hoặc video ngắn
+        if (!seenLinks.has(article.link) && !article.link.includes('/video/')) {
           uniqueArticles.push(article);
           seenLinks.add(article.link);
         }
@@ -243,7 +245,8 @@ const newsController = {
       res.status(200).json({
         success: true,
         source: url,
-        articles: uniqueArticles.slice(0, 10)
+        // === THAY ĐỔI 3: Trả về tối đa 30 bài thay vì 10 ===
+        articles: uniqueArticles.slice(0, 30) 
       });
     } catch (error) {
       console.error('Scrape error:', error.message);

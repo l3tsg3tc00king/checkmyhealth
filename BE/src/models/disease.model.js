@@ -1,16 +1,33 @@
 const { pool } = require('../config/db');
 
 const diseaseModel = {
-    // Láy danh sách (có tìm kiếm THEO TÊN HOẶC TRIỆU CHỨNG)
+    // Lấy danh sách (có tìm kiếm THEO TÊN HOẶC TRIỆU CHỨNG)
     getAll: async (search = '') => {
         try {
             let query = 'SELECT info_id, disease_code, disease_name_vi, image_url, symptoms FROM skin_diseases_info';
             let params = [];
 
             if (search) {
-                // Tìm kiếm theo tên bệnh, mã bệnh HOẶC triệu chứng
-                query += ' WHERE disease_name_vi LIKE ? OR disease_code LIKE ? OR symptoms LIKE ?';
-                params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+                // Tách từ khóa tìm kiếm thành các từ riêng biệt để tìm kiếm chính xác hơn
+                const searchTerms = search.trim().split(/\s+/).filter(term => term.length > 0);
+                
+                if (searchTerms.length > 0) {
+                    // Tạo điều kiện tìm kiếm cho mỗi từ khóa
+                    // Mỗi từ khóa sẽ tìm trong: tên bệnh, mã bệnh, hoặc triệu chứng
+                    const conditions = [];
+                    const allParams = [];
+                    
+                    searchTerms.forEach(term => {
+                        const searchPattern = `%${term}%`;
+                        // Tìm kiếm trong tên bệnh, mã bệnh, hoặc triệu chứng
+                        conditions.push('(disease_name_vi LIKE ? OR disease_code LIKE ? OR symptoms LIKE ?)');
+                        allParams.push(searchPattern, searchPattern, searchPattern);
+                    });
+                    
+                    // Tất cả các từ khóa phải xuất hiện (AND logic)
+                    query += ' WHERE ' + conditions.join(' AND ');
+                    params = allParams;
+                }
             }
             
             query += ' ORDER BY disease_name_vi ASC';

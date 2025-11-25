@@ -2,12 +2,17 @@ const { pool } = require('../config/db');
 
 const scheduleModel = {
     // Tạo lịch mới
+    // 1. Create: Thêm logic specific_date
     create: async (userId, data) => {
         try {
+            // Nếu repeat_days rỗng -> lưu specific_date
+            const repeatDays = (data.repeat_days && data.repeat_days.length > 0) ? data.repeat_days : null;
+            const specificDate = repeatDays ? null : data.specific_date; // 'YYYY-MM-DD'
+
             const [result] = await pool.query(
-                `INSERT INTO schedules (user_id, title, type, reminder_time, repeat_days) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [userId, data.title, data.type, data.reminder_time, data.repeat_days]
+                `INSERT INTO schedules (user_id, title, type, reminder_time, repeat_days, specific_date) 
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [userId, data.title, data.type, data.reminder_time, repeatDays, specificDate]
             );
             return result.insertId;
         } catch (error) {
@@ -16,25 +21,24 @@ const scheduleModel = {
         }
     },
 
-    // Lấy tất cả lịch trình của User (để quản lý)
-    getAllByUser: async (userId) => {
+    // 2. Update (MỚI)
+    update: async (userId, scheduleId, data) => {
         try {
-            const [rows] = await pool.query(
-                'SELECT * FROM schedules WHERE user_id = ? ORDER BY reminder_time ASC',
-                [userId]
+            const repeatDays = (data.repeat_days && data.repeat_days.length > 0) ? data.repeat_days : null;
+            const specificDate = repeatDays ? null : data.specific_date;
+
+            await pool.query(
+                `UPDATE schedules 
+                 SET title = ?, type = ?, reminder_time = ?, repeat_days = ?, specific_date = ?
+                 WHERE schedule_id = ? AND user_id = ?`,
+                [data.title, data.type, data.reminder_time, repeatDays, specificDate, scheduleId, userId]
             );
-            return rows;
+            return true;
         } catch (error) { throw error; }
     },
 
-    /**
-     * LẤY LỊCH TRÌNH CỦA MỘT NGÀY CỤ THỂ (Quan trọng nhất)
-     * Logic: Lấy tất cả lịch active + LEFT JOIN với bảng logs của ngày đó
-     * Để biết task nào đã xong, task nào chưa.
-     */
+    // 3. Get Tasks: Sửa logic OR (Lặp lại HOẶC Đúng ngày cụ thể)
     getTasksByDate: async (userId, dateStr, dayOfWeek) => {
-        // dateStr: '2023-11-20'
-        // dayOfWeek: '2' (Thứ 2), '3' (Thứ 3)... '8' (CN)
         try {
             const sql = `
                 SELECT s.*, l.status as log_status, l.completed_at
@@ -44,13 +48,16 @@ const scheduleModel = {
                     AND l.check_date = ?
                 WHERE s.user_id = ? 
                   AND s.is_active = TRUE
-                  AND s.repeat_days LIKE ? -- Kiểm tra xem hôm nay có phải ngày lặp lại không
+                  AND (
+                      (s.repeat_days LIKE ?) -- Trường hợp lặp lại
+                      OR 
+                      (s.specific_date = ?)  -- Trường hợp không lặp (đúng ngày)
+                  )
                 ORDER BY s.reminder_time ASC
             `;
-            // Tìm chuỗi repeat_days chứa dayOfWeek (Ví dụ: "2,4,6" chứa "2")
             const dayPattern = `%${dayOfWeek}%`; 
             
-            const [rows] = await pool.query(sql, [dateStr, userId, dayPattern]);
+            const [rows] = await pool.query(sql, [dateStr, userId, dayPattern, dateStr]);
             return rows;
         } catch (error) {
             console.error('Error get tasks:', error);
