@@ -10,13 +10,17 @@ const getDbDay = (jsDay) => {
 const initScheduledJobs = () => {
     // Chạy mỗi phút (* * * * *)
     cron.schedule('* * * * *', async () => {
-        const now = new Date();
-        const currentDay = getDbDay(now.getDay());
+        // === SỬA LỖI MÚI GIỜ TẠI ĐÂY ===
+        // Lấy giờ hiện tại của Server, nhưng chuyển sang múi giờ Việt Nam
+        const serverNow = new Date();
+        const vnTimeStr = serverNow.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const vnNow = new Date(vnTimeStr); 
+
+        const currentDay = getDbDay(vnNow.getDay());
         
-        // Lấy giờ phút hiện tại: "08:30"
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const currentTimeStr = `${hours}:${minutes}`; // So sánh với format HH:mm trong DB
+        const hours = String(vnNow.getHours()).padStart(2, '0');
+        const minutes = String(vnNow.getMinutes()).padStart(2, '0');
+        const currentTimeStr = `${hours}:${minutes}`;
 
         try {
             console.log(`[Cron] Checking schedules for ${currentTimeStr}, Day ${currentDay}...`);
