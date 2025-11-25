@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../contexts/AuthContext.jsx'
 import diseaseService from '../../../services/features/diseaseService.js'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
@@ -9,7 +8,6 @@ import '../../user/HistoryPage/History.css'
 const DiseasesPage = () => {
   usePageTitle('Bệnh lý')
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
   const [diseases, setDiseases] = useState([])
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -19,10 +17,8 @@ const DiseasesPage = () => {
   const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadDiseases()
-    }
-  }, [isAuthenticated, search])
+    loadDiseases()
+  }, [search])
 
   const loadDiseases = async () => {
     try {
@@ -47,17 +43,6 @@ const DiseasesPage = () => {
 
   const handleNavigateDetail = (id) => {
     navigate(`/diseases/${id}`)
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="history-container">
-        <div className="history-card">
-          <h2>Yêu cầu đăng nhập</h2>
-          <p>Bạn cần đăng nhập để xem danh sách bệnh lý.</p>
-        </div>
-      </div>
-    )
   }
 
   return (

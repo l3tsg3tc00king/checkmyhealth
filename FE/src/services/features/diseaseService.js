@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient.js';
+import { API_BASE_URL } from '../../config/api.js';
 
 const buildFormData = (data = {}) => {
   if (data instanceof FormData) return data
@@ -22,8 +23,21 @@ const diseaseService = {
       const url = search 
         ? `/api/diseases?search=${encodeURIComponent(search)}`
         : '/api/diseases';
-      const response = await apiClient(url, { method: 'GET' });
-      return response.data || response || [];
+      // Public API - không cần token
+      const response = await fetch(`${API_BASE_URL}${url}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.data || data || [];
     } catch (error) {
       console.error('Error fetching diseases:', error);
       throw error;
@@ -35,8 +49,21 @@ const diseaseService = {
    */
   getById: async (id) => {
     try {
-      const response = await apiClient(`/api/diseases/${id}`, { method: 'GET' });
-      return response.data || response;
+      // Public API - không cần token
+      const response = await fetch(`${API_BASE_URL}/api/diseases/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.data || data;
     } catch (error) {
       console.error('Error fetching disease detail:', error);
       throw error;
@@ -101,7 +128,6 @@ const diseaseService = {
         throw new Error('Bạn cần đăng nhập để sử dụng tính năng này');
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${API_BASE_URL}/api/diseases/export/all?format=${format}`, {
         method: 'GET',
         headers: {
@@ -142,7 +168,6 @@ const diseaseService = {
         throw new Error('Bạn cần đăng nhập để sử dụng tính năng này');
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${API_BASE_URL}/api/diseases/export/sample?format=${format}`, {
         method: 'GET',
         headers: {
@@ -186,7 +211,6 @@ const diseaseService = {
       const formData = new FormData();
       formData.append('file', file);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${API_BASE_URL}/api/diseases/import`, {
         method: 'POST',
         headers: {

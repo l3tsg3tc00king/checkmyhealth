@@ -5,6 +5,9 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 import './index.css'
 import App from './App.jsx'
 
+// Set default title
+document.title = 'CheckMyHealth'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

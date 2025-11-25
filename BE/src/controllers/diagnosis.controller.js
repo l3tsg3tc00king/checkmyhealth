@@ -44,6 +44,7 @@ const validateSkinImage = (aiResult) => {
 
 // --- HÀM GỌI API AI THỰC TẾ ---
 const callAiApiReal = async (imageUrl) => {
+    const startTime = Date.now(); // Track response time
     try {
         console.log(`[AI] Đang tải ảnh: ${imageUrl}`);
         const imageResponse = await axios.get(imageUrl, { responseType: 'stream', timeout: 15000 });
@@ -57,6 +58,7 @@ const callAiApiReal = async (imageUrl) => {
             timeout: 90000
         });
 
+        const responseTime = Date.now() - startTime; // Calculate response time
         const aiResult = aiResponse.data;
         
         // Validation
@@ -106,7 +108,8 @@ const callAiApiReal = async (imageUrl) => {
             confidence_score: aiResult.confidence || 0.0,
             description: diseaseInfo ? diseaseInfo.description : (aiResult.description || ""),
             recommendation: aiResult.recommendation || "Vui lòng đi khám bác sĩ.",
-            prediction_code: predictedClass
+            prediction_code: predictedClass,
+            response_time_ms: responseTime // Track response time
         };
 
     } catch (error) {

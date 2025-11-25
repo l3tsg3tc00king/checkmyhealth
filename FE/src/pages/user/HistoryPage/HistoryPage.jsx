@@ -272,14 +272,15 @@ const HistoryPage = () => {
       </div>
 
       <ConfirmDialog
-        open={confirmOpen}
-        title="Xác nhận xóa"
-        message="Bạn có chắc chắn muốn xóa lịch sử chuẩn đoán này? Hành động này không thể hoàn tác."
+        isOpen={confirmOpen}
+        onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-        confirmText="Xóa"
+        title="Xác nhận xóa lịch sử"
+        message="Bạn có chắc chắn muốn xóa lịch sử chuẩn đoán này? Hành động này không thể hoàn tác."
+        confirmText={deleting ? 'Đang xóa...' : 'Xóa'}
         cancelText="Hủy"
-        confirmButtonStyle={{ background: '#dc3545', color: 'white' }}
+        type="danger"
+        isConfirming={deleting}
       />
     </div>
   )

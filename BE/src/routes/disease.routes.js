@@ -44,9 +44,9 @@ const uploadDiseaseImage = (req, res, next) => {
     });
 };
 
-// Public (User đã đăng nhập đều xem được)
-router.get('/', authMiddleware, diseaseController.getList);
-router.get('/:id', authMiddleware, diseaseController.getDetail);
+// Public (Không cần đăng nhập)
+router.get('/', diseaseController.getList);
+router.get('/:id', diseaseController.getDetail);
 
 // Admin Only (CRUD)
 router.post('/', authMiddleware, adminMiddleware, uploadDiseaseImage, diseaseController.create);

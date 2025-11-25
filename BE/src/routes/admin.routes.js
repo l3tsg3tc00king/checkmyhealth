@@ -32,7 +32,7 @@ router.use(authMiddleware, adminMiddleware);
  *                   description: Tổng số người dùng
  *                 totalDiagnoses:
  *                   type: integer
- *                   description: Tổng số chẩn đoán
+ *                   description: Tổng số chuẩn đoán
  *       401:
  *         description: Không có quyền truy cập
  *       403:
@@ -44,6 +44,7 @@ router.get('/statistics', adminController.getStatistics);
 router.get('/statistics/timeseries', adminController.getStatisticsTimeseries);
 router.get('/statistics/breakdown', adminController.getStatisticsBreakdown);
 router.get('/statistics/export', adminController.exportStatistics);
+router.get('/dashboard/stats', adminController.getDashboardStats);
 router.get('/feedback', adminController.getFeedbackList);
 
 // === User Management ===
@@ -255,7 +256,7 @@ router.delete('/users/:userId', adminController.deleteUser);
  * @swagger
  * /api/admin/history/{userId}:
  *   get:
- *     summary: Lấy lịch sử chẩn đoán của một người dùng (Admin only)
+ *     summary: Lấy lịch sử chuẩn đoán của một người dùng (Admin only)
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -268,7 +269,7 @@ router.delete('/users/:userId', adminController.deleteUser);
  *         description: ID của người dùng
  *     responses:
  *       200:
- *         description: Danh sách lịch sử chẩn đoán
+ *         description: Danh sách lịch sử chuẩn đoán
  *         content:
  *           application/json:
  *             schema:
@@ -301,5 +302,55 @@ router.delete('/users/:userId', adminController.deleteUser);
  *         description: Lỗi máy chủ
  */
 router.get('/history/:userId', adminController.getHistoryForUser);
+
+// === Reports ===
+/**
+ * @swagger
+ * /api/admin/reports/diagnosis:
+ *   get:
+ *     summary: Báo cáo Chi tiết Chuẩn đoán với filters (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: diseaseName
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: minConfidence
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxConfidence
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Báo cáo chuẩn đoán
+ */
+router.get('/reports/diagnosis', adminController.getDiagnosisReport);
+router.get('/reports/diagnosis/export', adminController.exportDiagnosisReport);
+router.get('/reports/user-growth', adminController.getUserGrowthReport);
+router.get('/reports/ai-difficult-cases', adminController.getAIDifficultCases);
+router.get('/reports/ai-difficult-cases/export', adminController.exportAIDifficultCases);
 
 module.exports = router;

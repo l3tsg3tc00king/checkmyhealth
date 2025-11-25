@@ -302,6 +302,21 @@
   flex-direction: column;
   gap: 1rem;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-sidebar--collapsed {
+  width: 70px;
+  padding: 1.5rem 0.5rem;
+}
+
+.admin-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .admin-sidebar__title {
@@ -310,6 +325,41 @@
   letter-spacing: 0.08em;
   color: rgba(248, 250, 252, 0.8);
   font-weight: 600;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.admin-sidebar--collapsed .admin-sidebar__title {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.admin-sidebar__toggle {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.admin-sidebar__toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.admin-sidebar--collapsed .admin-sidebar__toggle {
+  margin: 0 auto;
 }
 
 .admin-sidebar__nav {
@@ -324,6 +374,39 @@
   color: rgba(248, 250, 252, 0.9);
   transition: all 0.2s ease;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+}
+
+.admin-sidebar--collapsed .admin-sidebar__link {
+  padding: 0.6rem;
+  justify-content: center;
+}
+
+.admin-sidebar__link span {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.admin-sidebar--collapsed .admin-sidebar__link span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.admin-sidebar__link-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .admin-sidebar__link.active {
@@ -341,6 +424,8 @@
   flex: 1;
   padding: 2.5rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .admin-dashboard__header {
@@ -385,6 +470,39 @@
   font-size: 2rem;
   font-weight: 700;
   color: #0284c7;
+}
+
+.admin-dashboard__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.admin-dashboard__charts {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  min-width: 0;
+}
+
+.admin-chart-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  overflow: visible;
+  min-width: 0;
+}
+
+.admin-chart-card > * {
+  min-width: 0;
+}
+
+.admin-chart-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+  font-weight: 600;
 }
 
 .not-found {

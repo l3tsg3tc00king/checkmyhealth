@@ -43,10 +43,16 @@ export const apiClient = async (path, options = {}) => {
     })
 
     if (!response.ok) {
-      // Nếu là lỗi 401, có thể token đã hết hạn
+      // Nếu là lỗi 401, có thể token đã hết hạn hoặc route yêu cầu auth
       if (response.status === 401) {
-        localStorage.removeItem('token')
-        // Có thể redirect đến trang login ở đây nếu cần
+        // Chỉ remove token nếu có token (có thể route public nhưng có token hết hạn)
+        if (token) {
+          localStorage.removeItem('token')
+        }
+        // Nếu không có token và route yêu cầu auth, throw error
+        if (!token) {
+          throw new Error('Không tìm thấy token. Yêu cầu truy cập bị từ chối.')
+        }
       }
 
       let errorMessage

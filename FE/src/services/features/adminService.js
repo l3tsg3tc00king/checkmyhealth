@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient.js'
+import { API_BASE_URL } from '../../config/api.js'
 
 /**
  * Lấy thống kê tổng quan (Admin only)
@@ -18,6 +19,27 @@ export const getStatistics = async () => {
       throw error
     }
     throw new Error(error.message || 'Không thể lấy thống kê')
+  }
+}
+
+/**
+ * Lấy thống kê tổng hợp cho Admin Dashboard với charts
+ * @returns {Promise<Object>} Dashboard stats với overview, diseaseDistribution, trend, confidenceAnalysis
+ */
+export const getDashboardStats = async () => {
+  try {
+    const response = await apiClient('/api/admin/dashboard/stats', {
+      method: 'GET',
+    })
+    return response
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Hệ thống phản hồi chậm, vui lòng thử lại.')
+    }
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể lấy thống kê dashboard')
   }
 }
 
@@ -46,7 +68,16 @@ export const getBreakdown = async (by = 'role') => {
 export const exportStatisticsCSV = async (params = {}) => {
   const query = new URLSearchParams(params).toString()
   // use window.fetch to get blob (apiClient parses JSON)
-  const res = await fetch(`/api/admin/statistics/export?${query}`, { method: 'GET', credentials: 'include' })
+  const token = localStorage.getItem('token')
+  const headers = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  const res = await fetch(`${API_BASE_URL}/api/admin/statistics/export?${query}`, { 
+    method: 'GET', 
+    headers,
+    credentials: 'include' 
+  })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new Error(text || `Export failed: ${res.status}`)
@@ -109,6 +140,27 @@ export const createUser = async (userData) => {
 }
 
 /**
+ * Cập nhật role của người dùng (Admin only)
+ * @param {number} userId - ID người dùng
+ * @param {string} role - Role mới ('user' hoặc 'admin')
+ * @returns {Promise<Object>} Kết quả
+ */
+export const updateUserRole = async (userId, role) => {
+  try {
+    const response = await apiClient(`/api/admin/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể cập nhật quyền người dùng')
+  }
+}
+
+/**
  * Cập nhật trạng thái người dùng (Admin only)
  * @param {number} userId - ID người dùng
  * @param {string} status - Trạng thái mới ('active' hoặc 'suspended')
@@ -129,26 +181,6 @@ export const updateUserStatus = async (userId, status) => {
   }
 }
 
-/**
- * Cập nhật quyền người dùng (Admin only)
- * @param {number} userId - ID người dùng
- * @param {string} role - Quyền mới ('user' hoặc 'admin')
- * @returns {Promise<Object>} Kết quả
- */
-export const updateUserRole = async (userId, role) => {
-  try {
-    const response = await apiClient(`/api/admin/users/${userId}/role`, {
-      method: 'PUT',
-      body: JSON.stringify({ role }),
-    })
-    return response
-  } catch (error) {
-    if (error.message.includes('401') || error.message.includes('403')) {
-      throw error
-    }
-    throw new Error(error.message || 'Không thể cập nhật quyền người dùng')
-  }
-}
 
 /**
  * Xóa người dùng (Admin only)
@@ -240,6 +272,134 @@ export const deleteFeedback = async (feedbackId) => {
       throw error
     }
     throw new Error(error.message || 'Không thể xóa phản hồi')
+  }
+}
+
+/**
+ * Báo cáo Chi tiết Chẩn đoán
+ * @param {Object} filters - { startDate, endDate, diseaseName, minConfidence, maxConfidence, page, pageSize }
+ */
+export const getDiagnosisReport = async (filters = {}) => {
+  try {
+    const queryParams = new URLSearchParams()
+    if (filters.startDate) queryParams.append('startDate', filters.startDate)
+    if (filters.endDate) queryParams.append('endDate', filters.endDate)
+    if (filters.diseaseName) queryParams.append('diseaseName', filters.diseaseName)
+    if (filters.minConfidence !== undefined) queryParams.append('minConfidence', filters.minConfidence)
+    if (filters.maxConfidence !== undefined) queryParams.append('maxConfidence', filters.maxConfidence)
+    if (filters.page) queryParams.append('page', filters.page)
+    if (filters.pageSize) queryParams.append('pageSize', filters.pageSize)
+
+    const response = await apiClient(`/api/admin/reports/diagnosis?${queryParams.toString()}`, {
+      method: 'GET',
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể lấy báo cáo chẩn đoán')
+  }
+}
+
+/**
+ * Export Báo cáo Chi tiết Chẩn đoán
+ * @param {Object} filters - { startDate, endDate, diseaseName, minConfidence, maxConfidence }
+ * @param {string} format - 'xlsx' hoặc 'csv'
+ */
+export const exportDiagnosisReport = async (filters = {}, format = 'xlsx') => {
+  try {
+    const queryParams = new URLSearchParams()
+    if (filters.startDate) queryParams.append('startDate', filters.startDate)
+    if (filters.endDate) queryParams.append('endDate', filters.endDate)
+    if (filters.diseaseName) queryParams.append('diseaseName', filters.diseaseName)
+    if (filters.minConfidence !== undefined) queryParams.append('minConfidence', filters.minConfidence)
+    if (filters.maxConfidence !== undefined) queryParams.append('maxConfidence', filters.maxConfidence)
+    queryParams.append('format', format)
+
+    const token = localStorage.getItem('token')
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    const res = await fetch(`${API_BASE_URL}/api/admin/reports/diagnosis/export?${queryParams.toString()}`, {
+      method: 'GET',
+      headers,
+      credentials: 'include'
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || `Export failed: ${res.status}`)
+    }
+    const blob = await res.blob()
+    return blob
+  } catch (error) {
+    throw new Error(error.message || 'Không thể export báo cáo')
+  }
+}
+
+/**
+ * Báo cáo Tăng trưởng Người dùng
+ * @param {string} period - 'day', 'week', hoặc 'month' (mặc định 'month')
+ */
+export const getUserGrowthReport = async (period = 'month') => {
+  try {
+    const response = await apiClient(`/api/admin/reports/user-growth?period=${period}`, {
+      method: 'GET',
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể lấy báo cáo tăng trưởng')
+  }
+}
+
+/**
+ * Báo cáo AI Performance - Ca khó
+ * @param {number} threshold - Ngưỡng confidence (mặc định 0.6)
+ * @param {number} limit - Số lượng tối đa
+ */
+export const getAIDifficultCases = async (threshold = 0.6, limit = 100) => {
+  try {
+    const response = await apiClient(`/api/admin/reports/ai-difficult-cases?threshold=${threshold}&limit=${limit}`, {
+      method: 'GET',
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('403')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể lấy ca khó')
+  }
+}
+
+/**
+ * Export AI Difficult Cases
+ * @param {number} threshold - Ngưỡng confidence
+ * @param {string} format - 'xlsx' hoặc 'csv'
+ */
+export const exportAIDifficultCases = async (threshold = 0.6, format = 'xlsx') => {
+  try {
+    const token = localStorage.getItem('token')
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    const res = await fetch(`${API_BASE_URL}/api/admin/reports/ai-difficult-cases/export?threshold=${threshold}&format=${format}`, {
+      method: 'GET',
+      headers,
+      credentials: 'include'
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || `Export failed: ${res.status}`)
+    }
+    const blob = await res.blob()
+    return blob
+  } catch (error) {
+    throw new Error(error.message || 'Không thể export ca khó')
   }
 }
 

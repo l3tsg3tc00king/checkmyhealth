@@ -32,7 +32,6 @@ const AdminFeedback = () => {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [expandedId, setExpandedId] = useState(null)
   const [statusUpdatingId, setStatusUpdatingId] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
@@ -217,27 +216,13 @@ const AdminFeedback = () => {
                   </div>
                 </div>
 
-                <div
-                  className={`admin-feedback__content ${
-                    expandedId === item.feedback_id ? 'expanded' : ''
-                  }`}
-                >
+                <div className="admin-feedback__content">
                   {item.content}
                 </div>
 
                 <div className="admin-feedback__footer">
                   <span>{formatDate(item.submitted_at || item.created_at)}</span>
                   <div className="admin-feedback__actions">
-                    <button
-                      className="btn"
-                      onClick={() =>
-                        setExpandedId((prev) =>
-                          prev === item.feedback_id ? null : item.feedback_id
-                        )
-                      }
-                    >
-                      {expandedId === item.feedback_id ? 'Thu gọn' : 'Xem chi tiết'}
-                    </button>
                     <button
                       className="btn btn-danger"
                       onClick={() => setConfirmDeleteId(item.feedback_id)}

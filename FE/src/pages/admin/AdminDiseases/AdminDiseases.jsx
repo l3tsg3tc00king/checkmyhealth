@@ -229,19 +229,19 @@ const AdminDiseases = () => {
     }
   }
 
-  const handleExportAll = async (format = 'xlsx') => {
+  const handleExportAll = async () => {
     try {
       setError('')
-      await diseaseService.exportAll(format)
+      await diseaseService.exportAll('csv')
     } catch (err) {
       setError(err.message || 'Lỗi khi export dữ liệu')
     }
   }
 
-  const handleExportSample = async (format = 'xlsx') => {
+  const handleExportSample = async () => {
     try {
       setError('')
-      await diseaseService.exportSample(format)
+      await diseaseService.exportSample('csv')
     } catch (err) {
       setError(err.message || 'Lỗi khi export template')
     }
@@ -369,17 +369,11 @@ const AdminDiseases = () => {
               <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Export:</span>
-                  <button className="btn" onClick={() => handleExportAll('xlsx')} style={{ fontSize: '0.9rem' }}>
-                    Export Excel
-                  </button>
-                  <button className="btn" onClick={() => handleExportAll('csv')} style={{ fontSize: '0.9rem' }}>
+                  <button className="btn" onClick={handleExportAll} style={{ fontSize: '0.9rem' }}>
                     Export CSV
                   </button>
                   <span style={{ margin: '0 8px', color: '#cbd5e0' }}>|</span>
-                  <button className="btn" onClick={() => handleExportSample('xlsx')} style={{ fontSize: '0.9rem' }}>
-                    Template Excel
-                  </button>
-                  <button className="btn" onClick={() => handleExportSample('csv')} style={{ fontSize: '0.9rem' }}>
+                  <button className="btn" onClick={handleExportSample} style={{ fontSize: '0.9rem' }}>
                     Template CSV
                   </button>
                 </div>
@@ -388,7 +382,7 @@ const AdminDiseases = () => {
                   <input
                     id="import-file-input"
                     type="file"
-                    accept=".xlsx,.xls,.csv"
+                    accept=".csv"
                     onChange={handleImportFileChange}
                     style={{ fontSize: '0.9rem' }}
                   />

@@ -79,22 +79,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route 
-          path="/diseases" 
-          element={
-            <ProtectedRoute>
-              <DiseasesPage />
-            </ProtectedRoute>
-          }
-        />
-              <Route 
-                path="/diseases/:id"
-                element={
-                  <ProtectedRoute>
-                    <DiseaseDetailPage />
-                  </ProtectedRoute>
-                }
-              />
+        <Route path="/diseases" element={<DiseasesPage />} />
+        <Route path="/diseases/:id" element={<DiseaseDetailPage />} />
         <Route 
           path="/schedule" 
           element={

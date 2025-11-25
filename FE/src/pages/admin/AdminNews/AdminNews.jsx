@@ -95,25 +95,6 @@ const AdminNews = () => {
     }
   }
 
-  const handleImportExample = async () => {
-    const examples = [
-      { url: 'https://news.net/health', label: 'news.net - Health' },
-      { url: 'https://example.com/section/health', label: 'Example - Health' }
-    ]
-
-    try {
-      setError('')
-      for (const ex of examples) {
-        await newsService.createSource(ex.url, ex.label)
-      }
-      // Reload sources
-      await loadSources()
-    } catch (err) {
-      console.error('Failed to import examples:', err)
-      setError('Lỗi khi nhập ví dụ')
-    }
-  }
-
   return (
     <section className="admin-page">
       <header className="admin-page__header">
@@ -146,7 +127,6 @@ const AdminNews = () => {
             style={{ width: 240, padding: '8px 10px' }}
           />
           <button className="btn btn-primary" onClick={handleAdd} disabled={loading}>Thêm</button>
-          <button className="btn" onClick={handleImportExample} disabled={loading}>Import mẫu</button>
         </div>
 
         {loading ? (

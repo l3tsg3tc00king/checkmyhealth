@@ -19,6 +19,12 @@ const NotificationBell = () => {
     }
   }, [isAuthenticated])
 
+  // Refresh khi click vào bell
+  const handleBellClick = () => {
+    loadNotifications()
+    setIsOpen(!isOpen)
+  }
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -86,7 +92,7 @@ const NotificationBell = () => {
     <div className="notification-bell" ref={dropdownRef}>
       <button
         className="notification-bell__button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleBellClick}
         aria-label="Thông báo"
       >
         <svg

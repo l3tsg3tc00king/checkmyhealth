@@ -92,57 +92,61 @@ const SiteHeader = ({ variant = 'site' }) => {
           <NavLink to="/news" className={buildLinkClass}>
             Tin tức
           </NavLink>
-          {isAuthenticated && (
-            <>
-              {/* Dịch vụ y tế dropdown */}
-              <div className="site-nav__dropdown-wrapper" ref={servicesMenuRef}>
-                <button
-                  className={`site-nav__dropdown-trigger ${servicesMenuOpen ? 'active' : ''}`}
-                  onClick={() => setServicesMenuOpen(!servicesMenuOpen)}
-                  onMouseEnter={() => setServicesMenuOpen(true)}
+          {/* Dịch vụ y tế dropdown - Public */}
+          <div className="site-nav__dropdown-wrapper" ref={servicesMenuRef}>
+            <button
+              className={`site-nav__dropdown-trigger ${servicesMenuOpen ? 'active' : ''}`}
+              onClick={() => setServicesMenuOpen(!servicesMenuOpen)}
+              onMouseEnter={() => setServicesMenuOpen(true)}
+            >
+              Dịch vụ y tế
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{ marginLeft: '4px', transition: 'transform 0.2s', transform: servicesMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              >
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </button>
+            {servicesMenuOpen && (
+              <div
+                className="site-nav__dropdown-menu"
+                onMouseLeave={() => setServicesMenuOpen(false)}
+              >
+                {isAuthenticated && (
+                  <NavLink
+                    to="/diagnosis"
+                    className={buildLinkClass}
+                    onClick={() => setServicesMenuOpen(false)}
+                  >
+                    Chuẩn đoán
+                  </NavLink>
+                )}
+                <NavLink
+                  to="/diseases"
+                  className={buildLinkClass}
+                  onClick={() => setServicesMenuOpen(false)}
                 >
-                  Dịch vụ y tế
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    style={{ marginLeft: '4px', transition: 'transform 0.2s', transform: servicesMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  Bệnh lý
+                </NavLink>
+                {isAuthenticated && (
+                  <NavLink
+                    to="/history"
+                    className={buildLinkClass}
+                    onClick={() => setServicesMenuOpen(false)}
                   >
-                    <path d="M4 6l4 4 4-4" />
-                  </svg>
-                </button>
-                {servicesMenuOpen && (
-                  <div
-                    className="site-nav__dropdown-menu"
-                    onMouseLeave={() => setServicesMenuOpen(false)}
-                  >
-                    <NavLink
-                      to="/diagnosis"
-                      className={buildLinkClass}
-                      onClick={() => setServicesMenuOpen(false)}
-                    >
-                      Chuẩn đoán
-                    </NavLink>
-                    <NavLink
-                      to="/diseases"
-                      className={buildLinkClass}
-                      onClick={() => setServicesMenuOpen(false)}
-                    >
-                      Bệnh lý
-                    </NavLink>
-                    <NavLink
-                      to="/history"
-                      className={buildLinkClass}
-                      onClick={() => setServicesMenuOpen(false)}
-                    >
-                      Lịch sử
-                    </NavLink>
-                  </div>
+                    Lịch sử
+                  </NavLink>
                 )}
               </div>
+            )}
+          </div>
+          {isAuthenticated && (
+            <>
 
               {/* Tiện ích dropdown */}
               <div className="site-nav__dropdown-wrapper" ref={utilitiesMenuRef}>

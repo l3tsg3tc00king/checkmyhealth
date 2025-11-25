@@ -1,16 +1,28 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getUsers, createUser } from '../../../services/features/adminService.js'
+import { getUsers, createUser, updateUserRole } from '../../../services/features/adminService.js'
 import { formatDateAndTime } from '../../../utils/format.js'
 import SortableTableHeader from '../../../components/ui/SortableTableHeader/SortableTableHeader.jsx'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import AddUserModal from '../../../components/features/admin/AddUserModal/AddUserModal.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
+import { useAuth } from '../../../contexts/AuthContext.jsx'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
+import { decodeToken } from '../../../utils/jwt.js'
+import { getToken } from '../../../services/auth/authService.js'
 import './AdminUsers.css'
 
 const AdminUsers = () => {
   usePageTitle('Quản lý người dùng')
   const navigate = useNavigate()
+  const { user: currentUser } = useAuth()
+  // Lấy current user ID từ token
+  const currentUserId = useMemo(() => {
+    const token = getToken()
+    if (!token) return null
+    const decoded = decodeToken(token)
+    return decoded?.userId || decoded?.user_id || null
+  }, [])
   const [state, setState] = useState({ loading: true, data: [], error: null })
   const [searchTerm, setSearchTerm] = useState('')
   const [sortConfig, setSortConfig] = useState({ column: 'user_id', direction: 'asc' })
@@ -19,6 +31,7 @@ const AdminUsers = () => {
   const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addUserLoading, setAddUserLoading] = useState(false)
+  const [roleChanging, setRoleChanging] = useState(false)
 
   // Fetch data
   useEffect(() => {
@@ -108,6 +121,29 @@ const AdminUsers = () => {
 
   const handleViewHistory = (userId, userName) => {
     navigate(`/admin/users/${userId}/history`)
+  }
+
+  const handleRoleChange = async (userId, newRole, userName) => {
+    // Confirm trước khi thay đổi
+    if (!window.confirm(`Bạn có chắc muốn thay đổi quyền của ${userName} thành ${newRole === 'admin' ? 'Admin' : 'User'}?`)) {
+      return
+    }
+
+    try {
+      setRoleChanging(true)
+      await updateUserRole(userId, newRole)
+      // Refresh data
+      const data = await getUsers(searchTerm)
+      setState({ loading: false, data, error: null })
+      alert(`Đã ${newRole === 'admin' ? 'thăng cấp' : 'giáng cấp'} quyền thành công`)
+    } catch (error) {
+      alert(error.message || 'Không thể thay đổi quyền')
+      // Reload để reset combobox về giá trị cũ
+      const data = await getUsers(searchTerm)
+      setState({ loading: false, data, error: null })
+    } finally {
+      setRoleChanging(false)
+    }
   }
 
   return (
@@ -204,7 +240,30 @@ const AdminUsers = () => {
                       <td>{user.user_id ?? '--'}</td>
                       <td>{user.email ?? '--'}</td>
                       <td>{user.full_name ?? '--'}</td>
-                      <td>{user.role ?? '--'}</td>
+                      <td>
+                        {currentUserId && currentUserId === user.user_id ? (
+                          <span className={`badge badge--${user.role === 'admin' ? 'primary' : 'default'}`}>
+                            {user.role === 'admin' ? 'Admin' : 'User'}
+                          </span>
+                        ) : (
+                          <select
+                            value={user.role || 'user'}
+                            onChange={(e) => handleRoleChange(user.user_id, e.target.value, user.full_name || user.email)}
+                            disabled={roleChanging}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              border: '1px solid #e5e7eb',
+                              fontSize: '0.9rem',
+                              cursor: roleChanging ? 'not-allowed' : 'pointer',
+                              background: 'white'
+                            }}
+                          >
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        )}
+                      </td>
                       <td>
                         <span className={`badge badge--${user.account_status ?? 'active'}`}>
                           {user.account_status ?? 'active'}
@@ -248,6 +307,7 @@ const AdminUsers = () => {
         onSubmit={handleAddUser}
         loading={addUserLoading}
       />
+
     </section>
   )
 }

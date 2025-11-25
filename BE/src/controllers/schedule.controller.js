@@ -8,12 +8,14 @@ const scheduleController = {
             const { title, type, reminder_time, repeat_days } = req.body;
             if (!title || !reminder_time) return res.status(400).json({ message: 'Thiếu thông tin' });
 
-            await scheduleModel.create(req.user.userId, { title, type, reminder_time, repeat_days });
-            res.status(201).json({ message: 'Đã tạo lịch trình' });
+           const id = await scheduleModel.create(req.user.userId, { title, type, reminder_time, repeat_days });
+            res.status(201).json({ message: 'Đã tạo lịch trình', id: id });
         } catch (error) {
             res.status(500).json({ message: 'Lỗi server', error: error.message });
         }
     },
+    
+    
 
     // Lấy danh sách nhiệm vụ cho ngày cụ thể
     getDailyTasks: async (req, res) => {
