@@ -12,7 +12,21 @@ const scheduleController = {
                 return res.status(400).json({message: 'Phải chọn ngày lặp lại hoặc ngày cụ thể'});
             }
 
-            const id = await scheduleModel.create(req.user.userId, { title, type, reminder_time, repeat_days, specific_date });
+            // Validate và normalize type
+            // Các giá trị hợp lệ có thể là: 'medication', 'exercise', 'other'
+            // Nếu database không hỗ trợ 'appointment', map thành 'other'
+            // Hoặc có thể database chỉ hỗ trợ 3 giá trị: medication, exercise, other
+            const validTypes = ['medication', 'exercise', 'other'];
+            // Map 'appointment' và các giá trị không hợp lệ khác thành 'other'
+            const normalizedType = validTypes.includes(type) ? type : 'other';
+
+            const id = await scheduleModel.create(req.user.userId, { 
+                title, 
+                type: normalizedType, 
+                reminder_time, 
+                repeat_days, 
+                specific_date 
+            });
             res.status(201).json({ message: 'Đã tạo lịch trình', id: id });
         } catch (error) {
             res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -25,7 +39,17 @@ const scheduleController = {
             const { id } = req.params;
             const { title, type, reminder_time, repeat_days, specific_date } = req.body;
             
-            await scheduleModel.update(req.user.userId, id, { title, type, reminder_time, repeat_days, specific_date });
+            // Validate và normalize type
+            const validTypes = ['medication', 'exercise', 'other'];
+            const normalizedType = validTypes.includes(type) ? type : 'other';
+            
+            await scheduleModel.update(req.user.userId, id, { 
+                title, 
+                type: normalizedType, 
+                reminder_time, 
+                repeat_days, 
+                specific_date 
+            });
             res.status(200).json({ message: 'Cập nhật thành công' });
         } catch (error) {
             res.status(500).json({ message: 'Lỗi server', error: error.message });
