@@ -9,7 +9,7 @@ const SchedulePage = () => {
   const { isAuthenticated } = useAuth()
   const [tasks, setTasks] = useState([])
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [showAll, setShowAll] = useState(false) // Hiển thị tất cả lịch trình
+  const [showAll, setShowAll] = useState(true) // Hiển thị tất cả lịch trình (mặc định)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
