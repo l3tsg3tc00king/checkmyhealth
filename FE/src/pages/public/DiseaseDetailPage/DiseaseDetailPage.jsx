@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import diseaseService from '../../../services/features/diseaseService.js'
+import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './DiseaseDetailPage.css'
 
@@ -90,7 +91,7 @@ const DiseaseDetailPage = () => {
 
         {disease.image_url && (
           <div className="disease-detail__image">
-            <img src={disease.image_url} alt={disease.disease_name_vi} />
+            <ImageViewer src={disease.image_url} alt={disease.disease_name_vi} />
           </div>
         )}
 

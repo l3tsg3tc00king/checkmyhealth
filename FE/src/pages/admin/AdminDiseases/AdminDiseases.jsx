@@ -3,6 +3,7 @@ import '../AdminUsers/AdminUsers.css'
 import diseaseService from '../../../services/features/diseaseService.js'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
+import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
 const AdminDiseases = () => {
@@ -145,6 +146,25 @@ const AdminDiseases = () => {
     setFormData((prev) => ({ ...prev, image_url: '' }))
   }
 
+  const handleImageUrlChange = (event) => {
+    const url = event.target.value.trim()
+    setFormData((prev) => ({ ...prev, image_url: url }))
+    
+    // Nếu nhập URL, clear file upload
+    if (url) {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+      setImageFile(null)
+      setImagePreview(url)
+    } else {
+      // Nếu xóa URL, chỉ clear preview nếu không có file
+      if (!imageFile) {
+        setImagePreview('')
+      }
+    }
+  }
+
   const handleRemoveImage = () => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview)
@@ -163,12 +183,21 @@ const AdminDiseases = () => {
     try {
       setError('')
       const payload = {
-        ...formData,
-        image_url: formData.image_url || ''
+        ...formData
       }
 
+      // Nếu có file upload, ưu tiên file (sẽ upload lên Cloudinary)
+      // Nếu không có file nhưng có URL, dùng URL
       if (imageFile) {
         payload.image = imageFile
+        // Clear image_url khi có file để backend ưu tiên file
+        payload.image_url = ''
+      } else if (formData.image_url) {
+        // Chỉ gửi URL nếu không có file
+        payload.image_url = formData.image_url.trim()
+      } else {
+        // Nếu không có cả file và URL, clear image_url
+        payload.image_url = ''
       }
 
       if (editingDisease) {
@@ -475,28 +504,48 @@ const AdminDiseases = () => {
             <div>
               <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Ảnh minh họa</label>
               {imagePreview ? (
-                <div style={{ marginBottom: 8 }}>
-                  <img
-                    src={imagePreview}
+                <div style={{ marginBottom: 8, background: '#f9fafb', borderRadius: 6, border: '1px solid #e5e7eb', padding: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+                  <ImageViewer 
+                    src={imagePreview} 
                     alt="Xem trước ảnh bệnh"
-                    style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }}
+                    className="disease-image-preview"
                   />
+                  <div className="image-error" style={{ display: 'none', padding: '12px', background: '#fee', color: '#c33', borderRadius: 6, fontSize: 14 }}>
+                    Không thể tải ảnh từ URL này. Vui lòng kiểm tra lại URL hoặc upload file.
+                  </div>
                 </div>
               ) : (
                 <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: 14 }}>Chưa có ảnh được chọn</p>
               )}
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ flex: 1 }}
-                />
-                {imagePreview && (
-                  <button type="button" className="btn" onClick={handleRemoveImage}>
-                    Xóa ảnh
-                  </button>
-                )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontSize: 14, color: '#4a5568' }}>Hoặc nhập URL ảnh:</label>
+                  <input
+                    type="url"
+                    value={formData.image_url}
+                    onChange={handleImageUrlChange}
+                    placeholder="https://example.com/image.jpg"
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, color: '#4a5568', marginRight: 8 }}>Hoặc</span>
+                  <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }}></div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label style={{ fontSize: 14, color: '#4a5568', marginRight: 8 }}>Upload từ máy:</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{ flex: 1, minWidth: 200 }}
+                  />
+                  {imagePreview && (
+                    <button type="button" className="btn" onClick={handleRemoveImage}>
+                      Xóa ảnh
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div>
@@ -593,11 +642,13 @@ const AdminDiseases = () => {
                   <div key={d.info_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, border: '1px solid #e5e7eb', borderRadius: 6, gap: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
                       {d.image_url && (
-                        <img
-                          src={d.image_url}
-                          alt={d.disease_name_vi}
-                          style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb', flexShrink: 0 }}
-                        />
+                        <div style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <img
+                            src={d.image_url}
+                            alt={d.disease_name_vi}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                        </div>
                       )}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{d.disease_name_vi}</div>

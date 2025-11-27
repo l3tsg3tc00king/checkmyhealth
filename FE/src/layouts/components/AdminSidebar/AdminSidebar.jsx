@@ -6,7 +6,8 @@ import {
   FiActivity, 
   FiUsers, 
   FiMessageSquare, 
-  FiBarChart 
+  FiBarChart,
+  FiMenu
 } from 'react-icons/fi'
 
 const NAV_ITEMS = [
@@ -47,7 +48,7 @@ const AdminSidebar = () => {
           aria-label={isCollapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
           title={isCollapsed ? 'Mở rộng' : 'Thu gọn'}
         >
-          {isCollapsed ? '→' : '←'}
+          <FiMenu />
         </button>
       </div>
       <nav className="admin-sidebar__nav">

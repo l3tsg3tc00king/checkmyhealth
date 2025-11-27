@@ -4,6 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { getHistory, deleteHistory } from '../../../services/features/diagnosisService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
+import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
 import './History.css'
 
 const HistoryPage = () => {
@@ -184,7 +185,7 @@ const HistoryPage = () => {
                     >
                       <div className="history-item-image">
                         {item.image_url ? (
-                          <img src={item.image_url} alt="Diagnosis" />
+                          <ImageViewer src={item.image_url} alt="Diagnosis" />
                         ) : (
                           <div className="history-item-placeholder">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">

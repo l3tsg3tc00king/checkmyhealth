@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { diagnose } from '../../../services/features/diagnosisService.js'
+import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './Diagnosis.css'
 
@@ -152,7 +153,7 @@ const DiagnosisPage = () => {
             >
               {preview ? (
                 <div className="diagnosis-preview">
-                  <img src={preview} alt="Preview" />
+                  <ImageViewer src={preview} alt="Preview" />
                   <button 
                     type="button" 
                     onClick={handleReset}
@@ -204,7 +205,7 @@ const DiagnosisPage = () => {
             
             {result.image_url && (
               <div className="diagnosis-result-image">
-                <img src={result.image_url} alt="Diagnosed" />
+                <ImageViewer src={result.image_url} alt="Diagnosed" />
               </div>
             )}
 
