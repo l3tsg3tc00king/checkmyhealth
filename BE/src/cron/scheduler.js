@@ -8,61 +8,46 @@ const getDbDay = (jsDay) => {
 };
 
 const initScheduledJobs = () => {
-    // Chạy mỗi phút
     cron.schedule('* * * * *', async () => {
-        const now = new Date();
-        const currentDayOfWeek = getDbDay(now.getDay());
-        
-        // Lấy giờ phút: "08:30"
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const currentTimeStr = `${hours}:${minutes}`; 
+        const serverNow = new Date();
+        const vnTimeStr = serverNow.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const vnNow = new Date(vnTimeStr); 
 
-        // Lấy ngày hiện tại format YYYY-MM-DD (để so sánh specific_date)
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const date = String(now.getDate()).padStart(2, '0');
-        const currentDateStr = `${year}-${month}-${date}`;
+        const currentDay = getDbDay(vnNow.getDay());
+        
+        // Format YYYY-MM-DD cho so sánh ngày cụ thể
+        const year = vnNow.getFullYear();
+        const month = String(vnNow.getMonth() + 1).padStart(2, '0');
+        const day = String(vnNow.getDate()).padStart(2, '0');
+        const currentDateStr = `${year}-${month}-${day}`;
+
+        const hours = String(vnNow.getHours()).padStart(2, '0');
+        const minutes = String(vnNow.getMinutes()).padStart(2, '0');
+        const currentTimeStr = `${hours}:${minutes}`;
 
         try {
-            console.log(`[Cron] Checking tasks for Time: ${currentTimeStr}, Date: ${currentDateStr} (Day ${currentDayOfWeek})...`);
-
-            // Query được nâng cấp: Check cả repeat_days lẫn specific_date
+            // SỬA QUERY: Tìm task đúng giờ VÀ (có trong ngày lặp lại HOẶC đúng ngày cụ thể)
             const [schedules] = await pool.query(`
                 SELECT s.schedule_id, s.user_id, s.title, s.type 
                 FROM schedules s
                 WHERE s.is_active = TRUE 
                 AND DATE_FORMAT(s.reminder_time, '%H:%i') = ?
                 AND (
-                    FIND_IN_SET(?, s.repeat_days) > 0   -- Lịch lặp
+                    FIND_IN_SET(?, s.repeat_days) > 0 
                     OR 
-                    s.specific_date = ?                 -- Lịch 1 lần
+                    s.specific_date = ?
                 )
-            `, [currentTimeStr, currentDayOfWeek, currentDateStr]);
-
+            `, [currentTimeStr, currentDay, currentDateStr]);
+            
+            /* ... Phần gửi thông báo giữ nguyên ... */
             if (schedules.length > 0) {
-                console.log(`[Cron] Found ${schedules.length} tasks.`);
-                
-                for (const schedule of schedules) {
-                    // Tạo nội dung thông báo tiếng Việt
+                 for (const schedule of schedules) {
                     const title = `Đến giờ: ${schedule.title}`;
-                    let message = '';
-                    switch (schedule.type) {
-                        case 'medication': message = 'Đến giờ uống thuốc rồi bạn ơi!'; break;
-                        case 'skincare': message = 'Đến giờ chăm sóc da rồi!'; break;
-                        case 'checkup': message = 'Bạn có lịch tái khám hôm nay.'; break;
-                        case 'exercise': message = 'Đứng dậy tập thể dục chút nào!'; break;
-                        case 'appointment': message = 'Bạn có cuộc hẹn sắp diễn ra.'; break;
-                        default: message = 'Đã đến giờ cho hoạt động của bạn.';
-                    }
-                    
+                    const message = `Đã đến giờ cho hoạt động ${schedule.type}.`;
                     await notificationModel.create(schedule.user_id, title, message);
                 }
             }
-        } catch (error) {
-            console.error('[Cron] Error:', error);
-        }
+        } catch (error) { console.error('[Cron] Error:', error); }
     });
 };
-
 module.exports = initScheduledJobs;

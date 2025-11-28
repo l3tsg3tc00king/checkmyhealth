@@ -46,19 +46,19 @@ const authController = {
 
             // 1. Validate input
             if (!email || !password) {
-                return res.status(400).json({ message: 'Vui lòng nhập email và mật khẩu.' });
+                return res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
             }
 
             // 2. Tìm user trong DB
             const user = await userModel.findByEmail(email);
             if (!user) {
-                return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+                return res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
             }
 
             // 3. So sánh mật khẩu
             const isMatch = await bcrypt.compare(password, user.password_hash);
             if (!isMatch) {
-                return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+                return res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
             }
 
             // 4. Tạo JWT Token
@@ -88,7 +88,8 @@ const authController = {
             });
 
         } catch (error) {
-            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+            // Trả về message chung để bảo mật
+            res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
         }
     }
 };

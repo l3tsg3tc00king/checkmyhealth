@@ -23,12 +23,12 @@ const userModel = {
      * Tạo một user mới.
      * Dùng cho chức năng đăng ký.
      */
-    create: async (email, passwordHash, fullName) => {
+    create: async (email, passwordHash, fullName, avatarUrl = null) => {
         try {
-            // Không cần thêm avatar_url vào đây, DB sẽ tự gán NULL
             const [result] = await pool.query(
-                'INSERT INTO users (email, password_hash, full_name) VALUES (?, ?, ?)',
-                [email, passwordHash, fullName] 
+                `INSERT INTO users (email, password_hash, full_name, avatar_url) 
+                VALUES (?, ?, ?, ?)`,
+                [email, passwordHash, fullName, avatarUrl]
             );
             return result.insertId;
         } catch (error) {

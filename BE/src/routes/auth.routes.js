@@ -248,6 +248,42 @@ router.post('/reset-password-with-code', authMiddleware, async (req, res) => {
 
 // === API MỚI 1: (CÔNG KHAI) YÊU CẦU RESET KHI QUÊN ===
 
+/**
+ * @swagger
+ * /api/auth/public-forgot-password:
+ *   post:
+ *     summary: Yêu cầu đặt lại mật khẩu khi quên (Public, không cần đăng nhập)
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email của tài khoản cần reset mật khẩu
+ *     responses:
+ *       200:
+ *         description: Mã xác nhận đã được gửi (nếu email tồn tại)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Nếu email này tồn tại, chúng tôi đã gửi một mã xác nhận."
+ *       400:
+ *         description: Email không hợp lệ
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.post('/public-forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -294,6 +330,56 @@ router.post('/public-forgot-password', async (req, res) => {
 
 // === API MỚI 2: (CÔNG KHAI) ĐẶT LẠI MẬT KHẨU BẰNG MÃ ===
 
+/**
+ * @swagger
+ * /api/auth/public-reset-password:
+ *   post:
+ *     summary: Đặt lại mật khẩu bằng mã OTP (Public, không cần đăng nhập)
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email của tài khoản
+ *               code:
+ *                 type: string
+ *                 description: Mã OTP 6 số đã nhận qua email
+ *                 example: "123456"
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 description: Mật khẩu mới
+ *     responses:
+ *       200:
+ *         description: Đổi mật khẩu thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Đổi mật khẩu thành công!"
+ *       400:
+ *         description: Mã OTP không đúng, đã hết hạn hoặc dữ liệu không hợp lệ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.post('/public-reset-password', async (req, res) => {
     try {
         const { email, code, newPassword } = req.body;

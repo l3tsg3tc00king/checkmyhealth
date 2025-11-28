@@ -125,6 +125,40 @@ router.post(
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/history', authMiddleware, diagnosisController.getHistory);
+
+/**
+ * @swagger
+ * /api/diagnose/{id}:
+ *   delete:
+ *     summary: Xóa một item trong lịch sử chẩn đoán
+ *     tags: [Diagnosis]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của chẩn đoán
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Xóa lịch sử chẩn đoán thành công"
+ *       401:
+ *         description: Không có quyền truy cập
+ *       404:
+ *         description: Không tìm thấy chẩn đoán
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.delete('/:id', authMiddleware, diagnosisController.deleteHistoryItem);
 
 module.exports = router;
