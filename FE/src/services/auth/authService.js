@@ -144,7 +144,23 @@ export const getToken = () => {
  * Đăng nhập bằng Google (redirect đến Google OAuth)
  */
 export const loginWithGoogle = () => {
-  window.location.href = `${API_BASE_URL}/api/auth/google`
+  // Lấy URL động từ config (đã được set từ biến môi trường khi build)
+  // Hỗ trợ cả VITE_API_URL và VITE_API_BASE_URL
+  const apiUrl = import.meta.env.VITE_API_URL 
+    || import.meta.env.VITE_API_BASE_URL
+    || API_BASE_URL // Fallback về config nếu không có trong env
+  
+  const googleAuthUrl = `${apiUrl}/api/auth/google`
+  
+  // Debug log (chỉ trong development)
+  if (import.meta.env.DEV) {
+    console.log('Redirecting to Google OAuth:', googleAuthUrl)
+    console.log('API_BASE_URL from config:', API_BASE_URL)
+    console.log('VITE_API_URL:', import.meta.env.VITE_API_URL)
+    console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
+  }
+  
+  window.location.href = googleAuthUrl
 }
 
 /**
