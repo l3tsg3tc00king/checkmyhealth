@@ -17,7 +17,7 @@
 }
 
 .notification-bell__button:hover {
-  color: #667eea;
+  color: #0066CC;
 }
 
 .notification-bell__badge {
@@ -69,7 +69,7 @@
 
 .notification-bell__unread-count {
   font-size: 12px;
-  color: #667eea;
+  color: #0066CC;
   font-weight: 600;
 }
 
@@ -128,7 +128,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #667eea;
+  background: #0066CC;
   margin-top: 6px;
   flex-shrink: 0;
 }

@@ -16,7 +16,7 @@
 
 .admin-feedback__search:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #0066CC;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 

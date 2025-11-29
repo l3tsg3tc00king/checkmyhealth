@@ -44,12 +44,12 @@
 }
 
 .map-page__search-input:focus {
-  border-color: #667eea;
+  border-color: #0066CC;
 }
 
 .map-page__search-btn {
   padding: 0.75rem 1.5rem;
-  background: #667eea;
+  background: #0066CC;
   color: white;
   border: none;
   border-radius: 8px;
@@ -79,14 +79,14 @@
 }
 
 .map-page__type-btn:hover {
-  border-color: #667eea;
+  border-color: #0066CC;
   background: #f7fafc;
 }
 
 .map-page__type-btn.active {
-  background: #667eea;
+  background: #0066CC;
   color: white;
-  border-color: #667eea;
+  border-color: #0066CC;
 }
 
 .map-page__error {
@@ -128,13 +128,13 @@
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s;
-  color: #667eea;
+  color: #0066CC;
 }
 
 .map-page__location-btn:hover {
-  background: #667eea;
+  background: #0066CC;
   color: white;
-  border-color: #667eea;
+  border-color: #0066CC;
   transform: scale(1.05);
 }
 
@@ -222,7 +222,7 @@
 }
 
 .map-page__place-item:hover {
-  border-color: #667eea;
+  border-color: #0066CC;
   background: #f7fafc;
   transform: translateX(4px);
 }
@@ -270,7 +270,7 @@
 .map-page__place-distance {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #667eea;
+  color: #0066CC;
   background: #eff6ff;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;

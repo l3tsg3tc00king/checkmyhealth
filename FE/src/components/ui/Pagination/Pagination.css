@@ -41,8 +41,8 @@
 
 .pagination__select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #0066CC;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
 .pagination__custom-input {
@@ -55,8 +55,8 @@
 
 .pagination__custom-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #0066CC;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
 .pagination__controls {
@@ -89,13 +89,15 @@
 }
 
 .pagination__btn--active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0066CC 0%, #00B4D8 100%);
   color: white;
   border-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
 }
 
 .pagination__btn--active:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0066CC 0%, #00B4D8 100%);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
 .pagination__btn--ellipsis {

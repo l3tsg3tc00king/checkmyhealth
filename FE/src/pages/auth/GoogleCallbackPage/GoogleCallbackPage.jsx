@@ -12,6 +12,8 @@ const GoogleCallbackPage = () => {
   const { updateUser } = useAuth()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [success, setSuccess] = useState(false)
+  const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
     const processCallback = async () => {
@@ -41,10 +43,6 @@ const GoogleCallbackPage = () => {
           }
           setError(errorMessage)
           setLoading(false)
-          // Redirect về login sau 3 giây
-          setTimeout(() => {
-            navigate('/login', { replace: true })
-          }, 3000)
           return
         }
 
@@ -94,26 +92,25 @@ const GoogleCallbackPage = () => {
               updateUser(user)
             }
 
-            // Redirect về trang chủ
-            navigate('/', { replace: true })
+            // Đánh dấu thành công
+            setSuccess(true)
+            setLoading(false)
           } catch (err) {
             console.error('Error processing callback:', err)
-            // Token đã được lưu, vẫn redirect về home
-            // AuthContext sẽ tự động load user khi check auth
-            navigate('/', { replace: true })
+            // Token đã được lưu, vẫn đánh dấu thành công
+            setSuccess(true)
+            setLoading(false)
           }
         } else {
           // Kiểm tra xem có token trong localStorage không (có thể đã được lưu trước đó)
           const existingToken = getToken()
           if (existingToken) {
-            // Có token, có thể đã đăng nhập thành công, redirect về home
-            navigate('/', { replace: true })
+            // Có token, có thể đã đăng nhập thành công
+            setSuccess(true)
+            setLoading(false)
           } else {
             setError('Không nhận được token từ server.')
             setLoading(false)
-            setTimeout(() => {
-              navigate('/login', { replace: true })
-            }, 3000)
           }
         }
       } catch (err) {
@@ -121,29 +118,66 @@ const GoogleCallbackPage = () => {
         // Kiểm tra xem có token không
         const existingToken = getToken()
         if (existingToken) {
-          // Có token, vẫn redirect về home
-          navigate('/', { replace: true })
+          // Có token, vẫn đánh dấu thành công
+          setSuccess(true)
+          setLoading(false)
         } else {
           setError('Có lỗi xảy ra khi xử lý đăng nhập Google.')
           setLoading(false)
-          setTimeout(() => {
-            navigate('/login', { replace: true })
-          }, 3000)
         }
-      } finally {
-        setLoading(false)
       }
     }
 
     processCallback()
   }, [searchParams, navigate, updateUser])
 
+  // Timer đếm ngược và redirect
+  useEffect(() => {
+    if (!loading && (success || error)) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            // Redirect về trang chủ nếu thành công, về login nếu lỗi
+            if (success) {
+              navigate('/', { replace: true })
+            } else {
+              navigate('/login', { replace: true })
+            }
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(timer)
+    }
+  }, [loading, success, error, navigate])
+
   if (loading) {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <h1 className="auth-title">Đang xử lý...</h1>
-          <p className="auth-subtitle">Vui lòng đợi trong giây lát</p>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            gap: '1.5rem',
+            padding: '2rem 0'
+          }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              border: '4px solid rgba(0, 102, 204, 0.1)',
+              borderTopColor: '#0066CC',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite'
+            }}></div>
+            <div style={{ textAlign: 'center' }}>
+              <h1 className="auth-title" style={{ marginBottom: '0.5rem' }}>Đang xử lý...</h1>
+              <p className="auth-subtitle">Vui lòng đợi trong giây lát</p>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -153,14 +187,31 @@ const GoogleCallbackPage = () => {
     <div className="auth-container">
       <div className="auth-card">
         <h1 className="auth-title">Đăng nhập Google</h1>
-        {error && (
-          <div className="auth-error">
-            {error}
+        
+        {success && (
+          <div className="auth-success">
+            <div className="auth-success-icon">✓</div>
+            <div className="auth-success-content">
+              <p className="auth-success-title">Đăng nhập thành công!</p>
+              <p className="auth-success-subtitle">
+                Đang chuyển hướng về trang chủ trong {countdown} giây...
+              </p>
+            </div>
           </div>
         )}
-        <p className="auth-subtitle">
-          {error ? 'Đang chuyển hướng về trang đăng nhập...' : 'Đăng nhập thành công!'}
-        </p>
+
+        {error && (
+          <div className="auth-error">
+            <div className="auth-error-icon">✕</div>
+            <div className="auth-error-content">
+              <p className="auth-error-title">Đăng nhập thất bại</p>
+              <p className="auth-error-message">{error}</p>
+              <p className="auth-error-subtitle">
+                Đang chuyển hướng về trang đăng nhập trong {countdown} giây...
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
