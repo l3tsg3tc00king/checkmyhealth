@@ -7,6 +7,11 @@ const bcrypt = require('bcryptjs'); // Hash mã
 const userModel = require('../models/user.model'); // Tương tác DB
 const { authMiddleware } = require('../middleware/auth.middleware');
 
+const { isStrongPassword } = require('../controllers/auth.controller.js');
+const { authLimiter, emailLimiter } = require('../middleware/limiter.middleware');
+
+
+
 /**
  * @swagger
  * /api/auth/register:
@@ -46,7 +51,8 @@ const { authMiddleware } = require('../middleware/auth.middleware');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/register', authController.register);
+// Đăng ký: Chống spam tạo tài khoản ảo
+router.post('/register', authLimiter, authController.register);
 
 /**
  * @swagger
@@ -81,7 +87,8 @@ router.post('/register', authController.register);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', authController.login);
+// Đăng nhập: Chống dò mật khẩu (Brute Force)
+router.post('/login', authLimiter, authController.login);
 
 /**
  * @swagger
@@ -115,18 +122,17 @@ router.post('/login', authController.login);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/request-password-reset', authMiddleware, async (req, res) => {
+// Áp dụng emailLimiter để chống spam gửi mail
+router.post('/request-password-reset', authMiddleware, emailLimiter, async (req, res) => {
     try {
         const user = await userModel.findById(req.user.userId);
 
-        // === YÊU CẦU CHECK CỦA BẠN ===
         if (!user.email) {
             return res.status(400).json({ message: 'Tài khoản của bạn chưa có email. Vui lòng cập nhật hồ sơ.' });
         }
         if (user.provider !== 'local') {
             return res.status(400).json({ message: `Bạn đang đăng nhập qua ${user.provider}, không thể dùng tính năng này.` });
         }
-        // =============================
 
         // 1. Tạo mã 6 số (OTP)
         const code = crypto.randomInt(100000, 999999).toString();
@@ -207,13 +213,20 @@ router.post('/request-password-reset', authMiddleware, async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/reset-password-with-code', authMiddleware, async (req, res) => {
+router.post('/reset-password-with-code', authMiddleware, authLimiter, async (req, res) => {
     try {
         const { code, newPassword } = req.body;
         const userId = req.user.userId;
 
         if (!code || !newPassword) {
             return res.status(400).json({ message: 'Vui lòng nhập mã và mật khẩu mới.' });
+        }
+
+        // [NEW] Kiểm tra độ mạnh mật khẩu
+        if (!isStrongPassword(newPassword)) {
+            return res.status(400).json({ 
+                message: 'Mật khẩu quá yếu. Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.' 
+            });
         }
 
         const user = await userModel.findById(userId);
@@ -284,7 +297,8 @@ router.post('/reset-password-with-code', authMiddleware, async (req, res) => {
  *       500:
  *         description: Lỗi máy chủ
  */
-router.post('/public-forgot-password', async (req, res) => {
+// Áp dụng emailLimiter
+router.post('/public-forgot-password', emailLimiter, async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) {
@@ -294,14 +308,12 @@ router.post('/public-forgot-password', async (req, res) => {
         // 1. Tìm user bằng email
         const user = await userModel.findByEmail(email);
         
-        // 2. Kiểm tra:
-        // (Bảo mật: Kể cả khi không tìm thấy user, ta vẫn trả về 200
-        // để kẻ tấn công không thể "dò" email nào đã đăng ký)
+        // 2. Kiểm tra (Trả về 200 giả để bảo mật)
         if (!user || user.provider !== 'local') {
             return res.status(200).json({ message: 'Nếu email này tồn tại, chúng tôi đã gửi một mã xác nhận.' });
         }
 
-        // 3. Tái sử dụng logic cũ: Tạo mã 6 số
+        // 3. Tạo mã
         const code = crypto.randomInt(100000, 999999).toString();
         const salt = await bcrypt.genSalt(10);
         const tokenHash = await bcrypt.hash(code, salt);
@@ -380,12 +392,20 @@ router.post('/public-forgot-password', async (req, res) => {
  *       500:
  *         description: Lỗi máy chủ
  */
-router.post('/public-reset-password', async (req, res) => {
+// Áp dụng authLimiter
+router.post('/public-reset-password', authLimiter, async (req, res) => {
     try {
         const { email, code, newPassword } = req.body;
 
         if (!email || !code || !newPassword) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ email, mã và mật khẩu mới.' });
+        }
+
+        // [NEW] Kiểm tra độ mạnh mật khẩu
+        if (!isStrongPassword(newPassword)) {
+            return res.status(400).json({ 
+                message: 'Mật khẩu quá yếu. Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.' 
+            });
         }
 
         // 1. Tìm user

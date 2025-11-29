@@ -14,7 +14,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const diseaseRoutes = require('./routes/disease.routes');
 const scheduleRoutes = require('./routes/schedule.routes');
 const passport = require('./config/passport');
-
+const { globalLimiter } = require('./middleware/limiter.middleware');
 // Database initialization
 const { initializeDatabase } = require('./config/init');
 
@@ -22,7 +22,7 @@ const { initializeDatabase } = require('./config/init');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
 
 const app = express();
-
+app.set('trust proxy', 1);
 // --- Middlewares ---
 // CORS configuration - cho phép frontend gọi API
 app.use(cors({
@@ -33,6 +33,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// [NEW] Áp dụng Global Limiter cho toàn bộ ứng dụng
+// Giúp chống DDoS cơ bản cho tất cả các API
+app.use(globalLimiter);
 app.use(passport.initialize());
 
 

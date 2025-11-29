@@ -23,6 +23,12 @@ const ResetPasswordPage = () => {
     }
   }, [email, navigate])
 
+  // Kiểm tra độ mạnh mật khẩu (match với backend)
+  const isStrongPassword = (password) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    return regex.test(password)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -39,8 +45,9 @@ const ResetPasswordPage = () => {
       return
     }
 
-    if (newPassword.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự')
+    // Kiểm tra độ mạnh mật khẩu (match với backend)
+    if (!isStrongPassword(newPassword)) {
+      setError('Mật khẩu quá yếu. Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.')
       return
     }
 
@@ -134,8 +141,11 @@ const ResetPasswordPage = () => {
               placeholder="••••••••"
               required
               disabled={loading || !!success}
-              minLength={6}
+              minLength={8}
             />
+            <small style={{ color: '#666666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)
+            </small>
           </div>
 
           <div className="auth-form-group">
@@ -148,7 +158,7 @@ const ResetPasswordPage = () => {
               placeholder="••••••••"
               required
               disabled={loading || !!success}
-              minLength={6}
+              minLength={8}
             />
           </div>
 

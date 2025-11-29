@@ -55,6 +55,19 @@ export const apiClient = async (path, options = {}) => {
         }
       }
 
+      // Xử lý rate limit errors (429)
+      if (response.status === 429) {
+        let errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.'
+        try {
+          const cloned = response.clone()
+          const errorData = await cloned.json()
+          errorMessage = errorData.message || errorMessage
+        } catch {
+          // Nếu không parse được JSON, dùng message mặc định
+        }
+        throw new Error(errorMessage)
+      }
+
       let errorMessage
       try {
         const cloned = response.clone()

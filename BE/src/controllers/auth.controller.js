@@ -3,6 +3,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 
+// Yêu cầu: Tối thiểu 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt
+const isStrongPassword = (password) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(password);
+};
 const authController = {
     /**
      * Xử lý đăng ký người dùng mới
@@ -15,6 +20,13 @@ const authController = {
                 return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin.' });
             }
 
+            // [NEW] Kiểm tra độ mạnh mật khẩu
+            if (!isStrongPassword(password)) {
+                return res.status(400).json({ 
+                    message: 'Mật khẩu quá yếu. Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.' 
+                });
+            }
+
             const existingUser = await userModel.findByEmail(email);
             if (existingUser) {
                 return res.status(409).json({ message: 'Email đã được sử dụng.' });
@@ -23,7 +35,6 @@ const authController = {
             const salt = await bcrypt.genSalt(10);
             const passwordHash = await bcrypt.hash(password, salt);
 
-            // Tạo avatar mặc định
             const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=3B82F6&color=fff&bold=true&size=256`;
 
             const userId = await userModel.create(email, passwordHash, fullName, defaultAvatar);
