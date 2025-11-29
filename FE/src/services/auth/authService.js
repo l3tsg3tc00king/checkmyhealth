@@ -139,3 +139,34 @@ export const getToken = () => {
   return localStorage.getItem('token')
 }
 
+/**
+ * Đăng nhập bằng Google (redirect đến Google OAuth)
+ */
+export const loginWithGoogle = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  window.location.href = `${API_BASE_URL}/api/auth/google`
+}
+
+/**
+ * Xử lý callback từ Google OAuth
+ * @param {string} token - JWT token từ backend
+ * @param {string} userData - User data dạng JSON string
+ */
+export const handleGoogleCallback = (token, userData) => {
+  if (token) {
+    localStorage.setItem('token', token)
+  }
+  
+  if (userData) {
+    try {
+      const user = JSON.parse(decodeURIComponent(userData))
+      return { token, user }
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      return { token, user: null }
+    }
+  }
+  
+  return { token, user: null }
+}
+

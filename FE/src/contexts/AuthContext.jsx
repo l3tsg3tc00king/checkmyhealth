@@ -92,7 +92,12 @@ export const AuthProvider = ({ children }) => {
   }
 
   const updateUser = (userData) => {
-    setUser(prev => ({ ...prev, ...userData }))
+    setUser(prev => {
+      if (prev) {
+        return { ...prev, ...userData }
+      }
+      return userData
+    })
   }
 
   const value = {

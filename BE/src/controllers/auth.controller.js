@@ -1,6 +1,8 @@
 const userModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
+
 const authController = {
     /**
      * Xử lý đăng ký người dùng mới
@@ -91,7 +93,158 @@ const authController = {
             // Trả về message chung để bảo mật
             res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
         }
-    }
+    },
+
+
+
+    // ========================================
+// THÊM VÀO CUỐI authController OBJECT
+// (THAY THẾ googleAuth và googleCallback trước đó)
+// ========================================
+
+    // ===== GOOGLE LOGIN CHO WEB =====
+
+    /**
+     * Bước 1: Redirect user đến Google (cho Web)
+     */
+    googleAuth: (req, res, next) => {
+        passport.authenticate('google', {
+            scope: ['profile', 'email'],
+            session: false
+        })(req, res, next);
+    },
+
+    /**
+     * Bước 2: Google callback (cho Web)
+     */
+    googleCallback: (req, res, next) => {
+        passport.authenticate('google', { 
+            session: false 
+        }, (err, user) => {
+            if (err) {
+                console.error('Google Auth Error:', err);
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+            }
+
+            if (!user) {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_user`);
+            }
+
+            // Kiểm tra account status
+            if (user.account_status === 'suspended') {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=account_suspended`);
+            }
+
+            try {
+                // Tạo JWT
+                const payload = {
+                    userId: user.user_id,
+                    email: user.email,
+                    role: user.role
+                };
+
+                const token = jwt.sign(
+                    payload,
+                    process.env.JWT_SECRET,
+                    { expiresIn: '24h' }
+                );
+
+                // Redirect về frontend kèm token
+                const userData = encodeURIComponent(JSON.stringify({
+                    userId: user.user_id,
+                    email: user.email,
+                    fullName: user.full_name,
+                    avatar: user.avatar_url,
+                    role: user.role
+                }));
+
+                return res.redirect(
+                    `${process.env.FRONTEND_URL}/auth/callback?token=${token}&user=${userData}`
+                );
+
+            } catch (error) {
+                console.error('JWT Error:', error);
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=token_failed`);
+            }
+        })(req, res, next);
+    },
+
+    // ===== GOOGLE LOGIN CHO MOBILE =====
+
+    /**
+     * Xác thực Google từ Mobile (Flutter/React Native)
+     */
+    googleLoginMobile: async (req, res) => {
+        try {
+            const { idToken, googleId, email, name, photoUrl } = req.body;
+
+            // Validate input
+            if (!googleId || !email) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: 'Thiếu thông tin Google' 
+                });
+            }
+
+            // Tạo fake profile object giống Google Strategy
+            const googleProfile = {
+                id: googleId,
+                displayName: name || email.split('@')[0],
+                emails: [{ value: email }],
+                photos: photoUrl ? [{ value: photoUrl }] : []
+            };
+
+            // Tìm hoặc tạo user
+            const user = await userModel.findOrCreateGoogleUser(googleProfile);
+
+            // Kiểm tra account status
+            if (user.account_status === 'suspended') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Tài khoản đã bị tạm khóa'
+                });
+            }
+
+            // Tạo JWT token
+            const payload = {
+                userId: user.user_id,
+                email: user.email,
+                role: user.role
+            };
+
+            const token = jwt.sign(
+                payload,
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+
+            // Trả về token và user info
+            res.status(200).json({
+                success: true,
+                message: 'Đăng nhập Google thành công!',
+                token: token,
+                user: {
+                    userId: user.user_id,
+                    email: user.email,
+                    fullName: user.full_name,
+                    avatar: user.avatar_url,
+                    role: user.role
+                }
+            });
+
+        } catch (error) {
+            console.error('Google Login Mobile Error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Lỗi đăng nhập Google',
+                error: error.message
+            });
+        }
+    },
+
+
+
+
 };
 
 module.exports = authController;

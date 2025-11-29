@@ -13,6 +13,7 @@ const feedbackRoutes = require('./routes/feedback.routes.js')
 const notificationRoutes = require('./routes/notification.routes');
 const diseaseRoutes = require('./routes/disease.routes');
 const scheduleRoutes = require('./routes/schedule.routes');
+const passport = require('./config/passport');
 
 // Database initialization
 const { initializeDatabase } = require('./config/init');
@@ -32,6 +33,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize());
 
 
 // --- Routes ---

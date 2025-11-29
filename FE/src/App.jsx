@@ -7,6 +7,7 @@ import LoginPage from './pages/auth/LoginPage/LoginPage.jsx'
 import RegisterPage from './pages/auth/RegisterPage/RegisterPage.jsx'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage/ForgotPasswordPage.jsx'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage/ResetPasswordPage.jsx'
+import GoogleCallbackPage from './pages/auth/GoogleCallbackPage/GoogleCallbackPage.jsx'
 
 // Public pages
 import HomePage from './pages/public/HomePage/HomePage.jsx'
@@ -47,6 +48,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/auth/callback" element={<GoogleCallbackPage />} />
         <Route 
           path="/diagnosis" 
           element={

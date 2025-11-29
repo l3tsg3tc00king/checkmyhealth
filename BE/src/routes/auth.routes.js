@@ -417,4 +417,9 @@ router.post('/public-reset-password', async (req, res) => {
     }
 });
 
+
+router.get('/google', authController.googleAuth);
+router.get('/google/callback', authController.googleCallback);
+router.post('/google/mobile', authController.googleLoginMobile);
+
 module.exports = router;

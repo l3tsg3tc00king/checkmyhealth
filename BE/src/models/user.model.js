@@ -229,7 +229,119 @@ const userModel = {
             console.error('Error updating avatar:', error);
             throw error;
         }
-    }
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+     /**
+     * Tìm user theo provider và provider_id (cho Google OAuth)
+     */
+    findByProvider: async (provider, providerId) => {
+        try {
+            const [rows] = await pool.query(
+                'SELECT * FROM users WHERE provider = ? AND provider_id = ?',
+                [provider, providerId]
+            );
+            return rows[0];
+        } catch (error) {
+            console.error('Error finding user by provider:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Tạo user mới từ Google OAuth
+     */
+    createGoogleUser: async (googleProfile) => {
+        try {
+            const email = googleProfile.emails[0].value;
+            const fullName = googleProfile.displayName;
+            const avatarUrl = googleProfile.photos[0]?.value || null;
+            const providerId = googleProfile.id;
+
+            const [result] = await pool.query(
+                `INSERT INTO users 
+                (email, password_hash, full_name, avatar_url, provider, provider_id, role, account_status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [email, null, fullName, avatarUrl, 'google', providerId, 'user', 'active']
+            );
+
+            return {
+                user_id: result.insertId,
+                email,
+                full_name: fullName,
+                avatar_url: avatarUrl,
+                provider: 'google',
+                provider_id: providerId,
+                role: 'user',
+                account_status: 'active'
+            };
+        } catch (error) {
+            console.error('Error creating Google user:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Cập nhật user từ local sang Google (link account)
+     */
+    linkGoogleAccount: async (userId, googleProfile) => {
+        try {
+            const avatarUrl = googleProfile.photos[0]?.value || null;
+            
+            await pool.query(
+                `UPDATE users 
+                SET provider = 'google', provider_id = ?, avatar_url = ?
+                WHERE user_id = ?`,
+                [googleProfile.id, avatarUrl, userId]
+            );
+
+            return await userModel.findById(userId);
+        } catch (error) {
+            console.error('Error linking Google account:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Tìm hoặc tạo user từ Google OAuth
+     */
+    findOrCreateGoogleUser: async (googleProfile) => {
+        try {
+            const email = googleProfile.emails[0].value;
+            const providerId = googleProfile.id;
+
+            // 1. Kiểm tra user đã đăng nhập Google này chưa
+            let user = await userModel.findByProvider('google', providerId);
+            if (user) {
+                return user; // Đã có, trả về luôn
+            }
+
+            // 2. Kiểm tra email đã tồn tại chưa (đăng ký local)
+            user = await userModel.findByEmail(email);
+            if (user) {
+                // Email đã tồn tại (local), link Google vào account này
+                return await userModel.linkGoogleAccount(user.user_id, googleProfile);
+            }
+
+            // 3. Chưa có gì cả, tạo user mới
+            return await userModel.createGoogleUser(googleProfile);
+
+        } catch (error) {
+            console.error('Error in findOrCreateGoogleUser:', error);
+            throw error;
+        }
+    },
 
 };
 
