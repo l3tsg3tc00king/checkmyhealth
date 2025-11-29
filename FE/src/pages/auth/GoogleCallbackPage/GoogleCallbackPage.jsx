@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import { handleGoogleCallback } from '../../../services/auth/authService.js'
+import { handleGoogleCallback, getToken } from '../../../services/auth/authService.js'
+import { getProfile } from '../../../services/features/profileService.js'
+import { decodeToken } from '../../../utils/jwt.js'
 import '../Auth.css'
 
 const GoogleCallbackPage = () => {
@@ -48,29 +50,88 @@ const GoogleCallbackPage = () => {
 
         // Xử lý callback thành công
         if (token) {
-          const result = handleGoogleCallback(token, userData)
+          // Lưu token trước
+          localStorage.setItem('token', token)
           
-          if (result.user) {
-            // Cập nhật user trong context
-            updateUser(result.user)
-          }
+          try {
+            // Thử parse user data từ URL nếu có
+            let user = null
+            if (userData) {
+              try {
+                const parsedUser = JSON.parse(decodeURIComponent(userData))
+                user = parsedUser
+              } catch (parseError) {
+                console.warn('Could not parse user data from URL:', parseError)
+                // Tiếp tục, sẽ load từ API
+              }
+            }
 
-          // Redirect về trang chủ
+            // Nếu không có user data từ URL, load từ API
+            if (!user) {
+              try {
+                const profile = await getProfile()
+                const decoded = decodeToken(token)
+                user = {
+                  ...profile,
+                  role: decoded?.role || 'user'
+                }
+              } catch (profileError) {
+                console.error('Error loading profile:', profileError)
+                // Vẫn tiếp tục với token đã lưu
+                const decoded = decodeToken(token)
+                if (decoded) {
+                  user = {
+                    userId: decoded.userId,
+                    email: decoded.email,
+                    role: decoded.role || 'user'
+                  }
+                }
+              }
+            }
+
+            // Cập nhật user trong context
+            if (user) {
+              updateUser(user)
+            }
+
+            // Redirect về trang chủ
+            navigate('/', { replace: true })
+          } catch (err) {
+            console.error('Error processing callback:', err)
+            // Token đã được lưu, vẫn redirect về home
+            // AuthContext sẽ tự động load user khi check auth
+            navigate('/', { replace: true })
+          }
+        } else {
+          // Kiểm tra xem có token trong localStorage không (có thể đã được lưu trước đó)
+          const existingToken = getToken()
+          if (existingToken) {
+            // Có token, có thể đã đăng nhập thành công, redirect về home
+            navigate('/', { replace: true })
+          } else {
+            setError('Không nhận được token từ server.')
+            setLoading(false)
+            setTimeout(() => {
+              navigate('/login', { replace: true })
+            }, 3000)
+          }
+        }
+      } catch (err) {
+        console.error('Google callback error:', err)
+        // Kiểm tra xem có token không
+        const existingToken = getToken()
+        if (existingToken) {
+          // Có token, vẫn redirect về home
           navigate('/', { replace: true })
         } else {
-          setError('Không nhận được token từ server.')
+          setError('Có lỗi xảy ra khi xử lý đăng nhập Google.')
           setLoading(false)
           setTimeout(() => {
             navigate('/login', { replace: true })
           }, 3000)
         }
-      } catch (err) {
-        console.error('Google callback error:', err)
-        setError('Có lỗi xảy ra khi xử lý đăng nhập Google.')
+      } finally {
         setLoading(false)
-        setTimeout(() => {
-          navigate('/login', { replace: true })
-        }, 3000)
       }
     }
 
