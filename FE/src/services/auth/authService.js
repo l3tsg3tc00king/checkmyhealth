@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient.js'
+import { API_BASE_URL } from '../../config/api.js'
 
 /**
  * Đăng ký tài khoản mới
@@ -143,7 +144,6 @@ export const getToken = () => {
  * Đăng nhập bằng Google (redirect đến Google OAuth)
  */
 export const loginWithGoogle = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
   window.location.href = `${API_BASE_URL}/api/auth/google`
 }
 
